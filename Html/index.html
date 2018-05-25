@@ -1,0 +1,27 @@
+<html>
+
+{% include header.html %}
+
+<body>
+
+  <h1 id='title' class='headers'>Samuel Lando</h1>
+  <div id='System'>
+    <div id='redCore'></div>
+    <div id='orangeCore'></div>
+    <div id='star'></div>
+    <div id='green'></div>
+    <div id='blue'></div>
+    <div id='red'></div>
+    <div id='violet'></div>
+  </div>
+  <div id='container'>
+    {% for frame in Markdown/frames: %}
+      <div id='{% frame %}'></div>
+    {% end for %}
+  </div>
+
+</body>
+
+{% include AnimationDriver.js %}
+
+</html>

@@ -1,6 +1,6 @@
 <html>
 
-{% include header.html %}
+{% include 'header.html' %}
 
 <body>
 
@@ -15,13 +15,14 @@
     <div id='violet'></div>
   </div>
   <div id='container'>
-    {% for frame in Markdown/frames: %}
+    {% for frame in 'Markdown/frames' %}
       <div id='{% frame %}'></div>
+      {% include frame %}
     {% end for %}
   </div>
 
 </body>
 
-{% include AnimationDriver.js %}
+{% include 'AnimationDriver.js' %}
 
 </html>

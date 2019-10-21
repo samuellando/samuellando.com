@@ -11,13 +11,13 @@ import (
 
 type Page struct {
   Title string
-    Body []byte
+  Body []byte
 }
 
 var templatesDir = "tmpl"
 var pagesDir = "pages"
 
-var validPath = regexp.MustCompile("^/(edit|save|view|static)/([a-zA-Z0-9]+)$")
+var validPath = regexp.MustCompile("^/(edit|save|view|static)/([a-zA-Z0-9.]+)$")
 
 var templates = template.Must(template.ParseFiles(templatesDir + "/edit.html",
                                                   templatesDir + "/view.html",
@@ -80,6 +80,10 @@ func saveHandler (w http.ResponseWriter, r *http.Request, title string) {
   http.Redirect(w, r, "/view/"+title, http.StatusFound)
 }
 
+func staticHandler (w http.ResponseWriter, r *http.Request, file string) {
+  http.ServeFile(w, r, "static/"+file)
+}
+
 func indexHandler (w http.ResponseWriter, r *http.Request) {
   files, err := ioutil.ReadDir(pagesDir)
   if err != nil {
@@ -105,5 +109,6 @@ func main() {
   http.HandleFunc("/view/", makeHandler(viewHandler))
   http.HandleFunc("/edit/", makeHandler(editHandler))
   http.HandleFunc("/save/", makeHandler(saveHandler))
+  http.HandleFunc("/static/", makeHandler(staticHandler))
   log.Fatal(http.ListenAndServe(":8080", nil))
 }

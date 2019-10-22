@@ -1,0 +1,6 @@
+<h1>Index</h1>
+  <ul><li><a href=/home>Home</a></li>
+  {{range $name := .}}
+    <li><a href=/view/{{$name}}>{{$name}}</a></li>
+  {{end}}
+</ul>

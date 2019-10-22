@@ -1,0 +1,13 @@
+<head>
+  <title>{{.Title}}</title>
+</head>
+<body>
+  <ul>
+    <li><a href="/home">Home</a></li>
+    <li><a href="/index">Index</a></li>
+    <li><a href="/edit/{{.Title}}">edit</a></li>
+  </ul>
+  <h1>{{.Title}}</h1>
+  {{printf "%s" .Body}}
+  <br>
+</body>

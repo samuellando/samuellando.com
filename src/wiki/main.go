@@ -1,19 +1,19 @@
 package main
 
 import (
-    "./page"
     "log"
+    "./page"
     "net/http"
     "html/template"
     "regexp"
     "io/ioutil"
     )
 
-const TEMPLATES_DIR = "tmpl"
 const PAGES_DIR = "pages"
 
 var validUrl = regexp.MustCompile("^/(edit|save|view|static)/([a-zA-Z0-9.]+)$")
 
+const TEMPLATES_DIR = "tmpl"
 var templates = template.Must(template.ParseFiles(TEMPLATES_DIR + "/edit.html",
                                                   TEMPLATES_DIR + "/view.html",
                                                   TEMPLATES_DIR + "/home.html",
@@ -38,7 +38,7 @@ func makeHandler(fn func (http.ResponseWriter, *http.Request, string)) http.Hand
 }
 
 func viewHandler (w http.ResponseWriter, r *http.Request, title string) {
-  p := &page.TxtPage{Directory: PAGES_DIR, Title: title}
+  p := page.New(PAGES_DIR, title)
   err := p.Load()
   if err != nil {
     log.Print(err)
@@ -50,7 +50,7 @@ func viewHandler (w http.ResponseWriter, r *http.Request, title string) {
 }
 
 func editHandler (w http.ResponseWriter, r *http.Request, title string) {
-  p := &page.TxtPage{Directory: PAGES_DIR, Title: title}
+  p := page.New(PAGES_DIR, title)
   err := p.Load()
   if err != nil {
     http.Redirect(w, r, "/new/"+title, http.StatusFound)
@@ -61,7 +61,7 @@ func editHandler (w http.ResponseWriter, r *http.Request, title string) {
 
 func saveHandler (w http.ResponseWriter, r *http.Request, title string) {
   body := r.FormValue("body")
-  p := &page.TxtPage{Directory: PAGES_DIR, Title: title, Body: []byte(body)}
+  p := page.New(PAGES_DIR, title, []byte(body))
   p.Save()
   http.Redirect(w, r, "/view/"+title, http.StatusFound)
 }

@@ -1,71 +1,98 @@
 package page
 
 import (
-    "io/ioutil"
-    "regexp"
-    )
+	"io/ioutil"
+	"os"
+	"regexp"
+)
 
 type PageError string
 
-
 func (e PageError) Error() string {
-  return string(e)
+	return string(e)
 }
 
-const INVALID_TITLE PageError = "Invalid title, must match /^[a-zA-Z0-9]+$/"
+const INVALID_TITLE PageError = "Invalid title, must match /^[a-zA-Z0-9/]+$/"
 const PAGE_EXISTS PageError = "Page already exists"
 const PAGE_NOT_FOUND PageError = "Page was not found"
 
 type Page interface {
-  Load() error
-  Save() error
-  Add() error
-  GetTitle() string
-  GetBody() []byte
+	Load() error
+	Save() error
+	Add() error
+	Remove() error
+	Title() string
+	Body() []byte
 }
 
-type TxtPage struct {
-  Directory string
-  Title string
-  Body []byte
+func New(directory, title string, body ...[]byte) *txtPage {
+        var b []byte
+	if len(body) == 0 {
+		b = make([]byte, 0)
+	} else {
+		b = body[0]
+	}
+	p := &txtPage{directory: directory, title: title, body: b}
+	return p
 }
 
-func (p *TxtPage) GetTitle() string {
-  return p.Title
+type txtPage struct {
+	directory string
+	title     string
+	body      []byte
 }
 
-func (p *TxtPage) GetBody() []byte {
-  return p.Body
+func (p *txtPage) filePath() string {
+	return p.directory + "/" + p.title + ".txt"
 }
 
-var validPath = regexp.MustCompile("^[a-zA-z0-9/]+$")
-
-func (p *TxtPage) Load() error {
-  if !validPath.MatchString(p.Title) {
-    return INVALID_TITLE
-  }
-  body, err := ioutil.ReadFile(p.Directory+"/"+p.Title+".txt")
-  if err != nil {
-    return PAGE_NOT_FOUND
-  }
-  p.Body = body
-  return nil
+func (p *txtPage) Title() string {
+	return p.title
 }
 
-func (p *TxtPage) Save() error {
-  if !validPath.MatchString(p.Title) {
-    return INVALID_TITLE
-  }
-  return ioutil.WriteFile(p.Directory+"/"+p.Title+".txt", p.Body, 0600)
+func (p *txtPage) Body() []byte {
+	return p.body
 }
 
-func (p *TxtPage) Add() error {
-  if !validPath.MatchString(p.Title) {
-    return INVALID_TITLE
-  }
-  err := p.Load()
-  if err == nil {
-    return PAGE_EXISTS
-  }
-  return p.Save()
+var validPath = regexp.MustCompile("^[a-zA-z0-9/]+.txt$")
+
+func (p *txtPage) Load() error {
+	if !validPath.MatchString(p.filePath()) {
+		return INVALID_TITLE
+	}
+	body, err := ioutil.ReadFile(p.filePath())
+	if err != nil {
+		return PAGE_NOT_FOUND
+	}
+	p.body = body
+	return nil
+}
+
+func (p *txtPage) Save() error {
+	if !validPath.MatchString(p.filePath()) {
+		return INVALID_TITLE
+	}
+	return ioutil.WriteFile(p.filePath(), p.body, 0600)
+}
+
+func (p *txtPage) Add() error {
+	if !validPath.MatchString(p.filePath()) {
+		return INVALID_TITLE
+	}
+	_, err := os.Stat(p.filePath())
+	if os.IsExist(err) {
+		return PAGE_EXISTS
+	}
+	return p.Save()
+}
+
+func (p *txtPage) Remove() error {
+	if !validPath.MatchString(p.filePath()) {
+		return INVALID_TITLE
+	}
+	_, err := os.Stat(p.filePath())
+	if os.IsNotExist(err) {
+		return PAGE_NOT_FOUND
+	}
+	return os.Remove(p.filePath())
 }

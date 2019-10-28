@@ -65,3 +65,19 @@ func TestValidate(t *testing.T) {
   }
   os.Remove(user_db)
 }
+
+func TestList(t *testing.T) {
+  u := New(user_db, name)
+  u.Add(pass)
+  u2 := New(user_db, "testUser2")
+  u2.Add(pass)
+  users := List(user_db)
+  if len(users) != 2 {
+    t.Errorf("Incorect list length, expected 2 got %d", len(users))
+  }
+  if users[0] != name || users[1] != "testUser2" {
+    t.Error("The users where not properly listed")
+  }
+  os.Remove(user_db)
+
+}

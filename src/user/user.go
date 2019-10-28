@@ -74,6 +74,22 @@ func validate(u *txtUser, data []byte, password string) error {
 	return nil
 }
 
+func List(file string) []string {
+  users := make([]string, 0)
+  if !validPath.MatchString(file) {
+    return nil
+  }
+  data, err := ioutil.ReadFile(file)
+  if err != nil {
+    return nil
+  }
+  d := strings.Split(string(data), "\ufb4f")
+  for i := 0; i < len(d) - 1; i += 2 {
+    users = append(users, d[i])
+  }
+  return users
+}
+
 func (u *txtUser) Validate(password string) error {
 	return u.passwordTool(validate, password)
 }

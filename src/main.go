@@ -3,13 +3,12 @@ package main
 import (
 	"./page"
 	"./user"
+        "./session"
 	"html/template"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/http"
 	"regexp"
-        "time"
         "fmt"
 )
 
@@ -26,18 +25,6 @@ var templates = template.Must(template.ParseFiles(TEMPLATES_DIR+"/edit.html",
 	TEMPLATES_DIR+"/index.html",
 	TEMPLATES_DIR+"/login.html",
 	TEMPLATES_DIR+"/signup.html"))
-
-var users = make(map[string]user.User)
-
-const charset = "QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm"
-
-func randomString(length int) string {
-	b := make([]byte, length)
-	for i := range b {
-		b[i] = charset[rand.Intn(len(charset))]
-	}
-	return string(b)
-}
 
 func renderTemplate(w http.ResponseWriter, tmpl string, p page.Page) {
 	err := templates.ExecuteTemplate(w, tmpl+".html", p)
@@ -103,16 +90,11 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-        cookie, err := r.Cookie("userSession")
+        u, err := session.Active(r)
         if err != nil {
           fmt.Fprintf(w, "Not logged in")
         } else {
-          u := users[cookie.Value]
-          if u == nil {
-            fmt.Fprintf(w, "Not logged in")
-          } else {
-            fmt.Fprintf(w, "Logged in as: %s", u.UserName())
-          }
+          fmt.Fprintf(w, "Logged in as: %s", (*u).UserName())
         }
   }
 
@@ -130,15 +112,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
       }
-      userSession := randomString(100)
-      expiration := time.Now().Add(time.Hour)
-      cookie, err := r.Cookie("userSession")
-      if err == nil {
-          delete(users, cookie.Value)
-      }
-      cook := http.Cookie{Name: "userSession", Value: userSession, Expires:expiration}
-      http.SetCookie(w, &cook)
-      users[userSession] = u
+      session.Create(w, r, u)
       http.Redirect(w, r, "/index", http.StatusFound)
     } else {
       renderTemplate(w, "login", nil)
@@ -154,11 +128,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
       if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
       }
-      userSession := randomString(100)
-      expiration := time.Now().Add(time.Hour)
-      cookie := http.Cookie{Name: "userSession", Value: userSession, Expires:expiration}
-      http.SetCookie(w, &cookie)
-      users[userSession] = u
+      session.Create(w, r, u)
       http.Redirect(w, r, "/index", http.StatusFound)
     } else {
       renderTemplate(w, "signup", nil)
@@ -166,12 +136,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
   }
 
   func logOutHandler(w http.ResponseWriter, r *http.Request) {
-    cookie, err := r.Cookie("userSession")
-    if err == nil {
-      delete(users, cookie.Value)
-      cookie.Expires = time.Now()
-      http.SetCookie(w, cookie)
-    }
+    session.Destroy(w, r)
     http.Redirect(w, r, "/index", http.StatusFound)
   }
 

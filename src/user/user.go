@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"regexp"
 	"strings"
+        "os"
 )
 
 type User interface {
@@ -49,7 +50,10 @@ func (u *txtUser) passwordTool(f passwordFunc, password string) error {
 	}
 	data, err := ioutil.ReadFile(u.file)
 	if err != nil {
-		return err
+          _, err2 := os.Create(u.file)
+          if err2 != nil {
+            return err
+          }
 	}
 	return f(u, data, password)
 }
@@ -82,7 +86,7 @@ func add(u *txtUser, data []byte, password string) error {
 	}
 	passwordSha512 := sha512.Sum512([]byte(password))
 	u.passwordSha512 = passwordSha512[:]
-	err := ioutil.WriteFile(u.file, append(data, []byte(u.userName+"\ufb4f"+string(u.passwordSha512)+"\ufb4f")...), 060000)
+	err := ioutil.WriteFile(u.file, append(data, []byte(u.userName+"\ufb4f"+string(u.passwordSha512)+"\ufb4f")...), 0644)
 	if err != nil {
 		return err
 	}

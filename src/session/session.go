@@ -19,10 +19,6 @@ func randomString(length int) string {
 	return string(b)
 }
 
-type Session interface {
-  Activep(http.ResponseWriter) (*user.User, error)
-}
-
 const MAX_TIME = time.Hour
 
 var itemTable = make(map[string]*item)
@@ -35,7 +31,7 @@ type  session struct {
   user *user.User
 }
 
-func (s *session) Activep(r *http.Request) (*user.User, error) {
+func Active(r *http.Request) (*user.User, error) {
   cookie, err := r.Cookie("userSession")
   if err != nil {
     return nil, errors.New("No valid session id found")
@@ -49,46 +45,55 @@ func (s *session) Activep(r *http.Request) (*user.User, error) {
   }
 }
 
-func sessionAction(f func(http.ResponseWriter, *http.Request, *user.User), w http.ResponseWriter, r *http.Request, u *user.User) {
+func sessionAction(f func(http.ResponseWriter, *http.Request, user.User), w http.ResponseWriter, r *http.Request, u user.User) {
   clearStaleSessions()
   f(w, r, u)
 }
 
 func clearStaleSessions() {
-  i := heap.Pop(&pq).(*item)
-  for ; i.priority().Sub(time.Now().Add(MAX_TIME)) < 0; i = heap.Pop(&pq).(*item) {
-    delete(itemTable, i.session.sessionId)
+  if (pq.Len() > 0) {
+    i := heap.Pop(&pq).(*item)
+    for ; i.priority().Add(MAX_TIME).Sub(time.Now()) < 0 && pq.Len() > 0; i = heap.Pop(&pq).(*item) {
+      delete(itemTable, i.session.sessionId)
+    }
+    heap.Push(&pq, i)
   }
-  heap.Push(&pq, i)
 }
 
-func create(w http.ResponseWriter, r *http.Request, u *user.User) {
+func create(w http.ResponseWriter, r *http.Request, u user.User) {
   _, err := r.Cookie("userSession")
   if err == nil {
     destroy(w, r, nil)
+  }
+  if u == nil {
+    return
   }
   userSession := randomString(100)
   expiration := time.Now().Add(MAX_TIME)
   cookie := &http.Cookie{Name: "userSession", Value: userSession, Expires: expiration}
   http.SetCookie(w, cookie)
-  session := &session{lastAction: time.Now(), user: u, sessionId: userSession}
+  session := &session{lastAction: time.Now(), user: &u, sessionId: userSession}
   item := &item{session: session}
   heap.Push(&pq, item)
   itemTable[userSession] = item
 }
 
-func destroy(w http.ResponseWriter, r *http.Request, u *user.User) {
+func destroy(w http.ResponseWriter, r *http.Request, u user.User) {
   if u == nil {
     cookie, err := r.Cookie("userSession")
     if err == nil {
       i := itemTable[cookie.Value]
-      heap.Remove(&pq, i.index)
-      delete(itemTable, cookie.Value)
+      if i != nil {
+        heap.Remove(&pq, i.index)
+        delete(itemTable, cookie.Value)
+      }
+     cookie.Expires = time.Now()
+     http.SetCookie(w, cookie)
     }
   }
 }
 
-func Create(w http.ResponseWriter, r *http.Request, u *user.User) {
+func Create(w http.ResponseWriter, r *http.Request, u user.User) {
   sessionAction(create, w, r, u)
 }
 

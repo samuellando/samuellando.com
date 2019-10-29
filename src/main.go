@@ -51,30 +51,30 @@ func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
 		http.NotFound(w, r)
 		return
 	} else {
-          u, _ := session.Active(r)
+		u, _ := session.Active(r)
 
-        if !p.WhiteListed(*u) {
-          http.Redirect(w, r, "/index", http.StatusFound)
-        }
+		if !p.WhiteListed(*u) {
+			http.Redirect(w, r, "/index", http.StatusFound)
+		}
 		renderTemplate(w, "view", p)
 	}
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request, title string) {
-       p := page.New(PAGES_DIR, title)
-       p.Load()
-       u, _ := session.Active(r)
-       if !p.WhiteListed(*u) {
-          http.Redirect(w, r, "/index", http.StatusFound)
-       }
-        renderTemplate(w, "edit", p)
+	p := page.New(PAGES_DIR, title)
+	p.Load()
+	u, _ := session.Active(r)
+	if !p.WhiteListed(*u) {
+		http.Redirect(w, r, "/index", http.StatusFound)
+	}
+	renderTemplate(w, "edit", p)
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	body := r.FormValue("body")
 	p := page.New(PAGES_DIR, title, []byte(body))
-        u, _ := session.Active(r)
-        p.AddUser(*u)
+	u, _ := session.Active(r)
+	p.AddUser(*u)
 	p.Save()
 	http.Redirect(w, r, "/view/"+title, http.StatusFound)
 }

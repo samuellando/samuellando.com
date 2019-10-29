@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"crypto/sha512"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
-        "os"
 )
 
 type User interface {
@@ -50,10 +50,10 @@ func (u *txtUser) passwordTool(f passwordFunc, password string) error {
 	}
 	data, err := ioutil.ReadFile(u.file)
 	if err != nil {
-          _, err2 := os.Create(u.file)
-          if err2 != nil {
-            return err
-          }
+		_, err2 := os.Create(u.file)
+		if err2 != nil {
+			return err
+		}
 	}
 	return f(u, data, password)
 }
@@ -65,7 +65,7 @@ func validate(u *txtUser, data []byte, password string) error {
 		return USER_DOES_NOT_EXIST
 	}
 	//if u.passwordSha512 != nil { TODO
-		u.passwordSha512 = []byte(strings.Split(d[i:], "\ufb4f")[1])
+	u.passwordSha512 = []byte(strings.Split(d[i:], "\ufb4f")[1])
 	//}
 	passwordSha512 := sha512.Sum512([]byte(password))
 	if !bytes.Equal(u.passwordSha512, passwordSha512[:]) {
@@ -75,19 +75,19 @@ func validate(u *txtUser, data []byte, password string) error {
 }
 
 func List(file string) []string {
-  users := make([]string, 0)
-  if !validPath.MatchString(file) {
-    return nil
-  }
-  data, err := ioutil.ReadFile(file)
-  if err != nil {
-    return nil
-  }
-  d := strings.Split(string(data), "\ufb4f")
-  for i := 0; i < len(d) - 1; i += 2 {
-    users = append(users, d[i])
-  }
-  return users
+	users := make([]string, 0)
+	if !validPath.MatchString(file) {
+		return nil
+	}
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return nil
+	}
+	d := strings.Split(string(data), "\ufb4f")
+	for i := 0; i < len(d)-1; i += 2 {
+		users = append(users, d[i])
+	}
+	return users
 }
 
 func (u *txtUser) Validate(password string) error {

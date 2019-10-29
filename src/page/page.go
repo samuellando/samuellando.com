@@ -1,11 +1,11 @@
 package page
 
 import (
+	"../user"
 	"io/ioutil"
 	"os"
 	"regexp"
-        "strings"
-        "../user"
+	"strings"
 )
 
 type PageError string
@@ -25,12 +25,12 @@ type Page interface {
 	Remove() error
 	Title() string
 	Body() []byte
-        AddUser(user.User)
-        WhiteListed(user.User) bool
+	AddUser(user.User)
+	WhiteListed(user.User) bool
 }
 
 func New(directory, title string, body ...[]byte) *txtPage {
-        var b []byte
+	var b []byte
 	if len(body) == 0 {
 		b = make([]byte, 0)
 	} else {
@@ -41,25 +41,25 @@ func New(directory, title string, body ...[]byte) *txtPage {
 }
 
 func List(directory string) []string {
-  if !regexp.MustCompile("^[a-zA-Z0-9/]+").MatchString(directory) {
-    return nil
-  }
-  files, err := ioutil.ReadDir(directory)
-  if err != nil {
-    return nil
-  }
-  fileList := make([]string, 0)
-  for _, file := range files {
-    fileList = append(fileList, strings.ReplaceAll(file.Name(), ".txt", ""))
-  }
-  return fileList
+	if !regexp.MustCompile("^[a-zA-Z0-9/]+").MatchString(directory) {
+		return nil
+	}
+	files, err := ioutil.ReadDir(directory)
+	if err != nil {
+		return nil
+	}
+	fileList := make([]string, 0)
+	for _, file := range files {
+		fileList = append(fileList, strings.ReplaceAll(file.Name(), ".txt", ""))
+	}
+	return fileList
 }
 
 type txtPage struct {
 	directory string
 	title     string
 	body      []byte
-        users     []string
+	users     []string
 }
 
 func (p *txtPage) filePath() string {
@@ -75,21 +75,21 @@ func (p *txtPage) Body() []byte {
 }
 
 func (p *txtPage) AddUser(user user.User) {
-  p.users = append(p.users, user.UserName())
+	p.users = append(p.users, user.UserName())
 }
 
 func (p *txtPage) WhiteListed(user user.User) bool {
-  isWhiteListed := false
-  if len(p.users) == 0 {
-    isWhiteListed = true
-  }
-  for i := 0; i < len(p.users); i++ {
-    if p.users[i] == user.UserName() {
-      isWhiteListed = true
-      break
-    }
-  }
-  return isWhiteListed
+	isWhiteListed := false
+	if len(p.users) == 0 {
+		isWhiteListed = true
+	}
+	for i := 0; i < len(p.users); i++ {
+		if p.users[i] == user.UserName() {
+			isWhiteListed = true
+			break
+		}
+	}
+	return isWhiteListed
 }
 
 var validPath = regexp.MustCompile("^[a-zA-z0-9/]+.txt$")
@@ -102,21 +102,21 @@ func (p *txtPage) Load() error {
 	if err != nil {
 		return PAGE_NOT_FOUND
 	}
-        body := []byte(strings.Split(string(data), "\ufb4f")[0])
-        users := strings.Split(string(data), "\ufb4f")[1:]
+	body := []byte(strings.Split(string(data), "\ufb4f")[0])
+	users := strings.Split(string(data), "\ufb4f")[1:]
 	p.body = body
-        p.users = users
+	p.users = users
 	return nil
 }
 
 func (p *txtPage) Save() error {
 	if !validPath.MatchString(p.filePath()) {
 		return INVALID_TITLE
-        }
-        data := p.body
-        for i := 0; i < len(p.users); i++ {
-          data = append(data, append([]byte("\ufb4f"), []byte(p.users[i])...)...)
-        }
+	}
+	data := p.body
+	for i := 0; i < len(p.users); i++ {
+		data = append(data, append([]byte("\ufb4f"), []byte(p.users[i])...)...)
+	}
 	return ioutil.WriteFile(p.filePath(), data, 0600)
 }
 

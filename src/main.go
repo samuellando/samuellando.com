@@ -2,14 +2,13 @@ package main
 
 import (
 	"./page"
+	"./session"
 	"./user"
-        "./session"
+	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"regexp"
-        "fmt"
 )
 
 const PAGES_DIR = "pages"
@@ -52,23 +51,30 @@ func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
 		http.NotFound(w, r)
 		return
 	} else {
+          u, _ := session.Active(r)
+
+        if !p.WhiteListed(*u) {
+          http.Redirect(w, r, "/index", http.StatusFound)
+        }
 		renderTemplate(w, "view", p)
 	}
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request, title string) {
-	p := page.New(PAGES_DIR, title)
-	err := p.Load()
-	if err != nil {
-		http.Redirect(w, r, "/new/"+title, http.StatusFound)
-		return
-	}
-	renderTemplate(w, "edit", p)
+       p := page.New(PAGES_DIR, title)
+       p.Load()
+       u, _ := session.Active(r)
+       if !p.WhiteListed(*u) {
+          http.Redirect(w, r, "/index", http.StatusFound)
+       }
+        renderTemplate(w, "edit", p)
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 	body := r.FormValue("body")
 	p := page.New(PAGES_DIR, title, []byte(body))
+        u, _ := session.Active(r)
+        p.AddUser(*u)
 	p.Save()
 	http.Redirect(w, r, "/view/"+title, http.StatusFound)
 }
@@ -78,77 +84,70 @@ func staticHandler(w http.ResponseWriter, r *http.Request, file string) {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	files, err := ioutil.ReadDir(PAGES_DIR)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var names = make([]string, 0)
-	for i := 0; i < len(files); i++ {
-		names = append(names, files[i].Name()[:len(files[i].Name())-4])
-	}
-	err = templates.ExecuteTemplate(w, "index.html", names)
+	pages := page.List(PAGES_DIR)
+	err := templates.ExecuteTemplate(w, "index.html", pages)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-        u, err := session.Active(r)
-        if err != nil {
-          fmt.Fprintf(w, "Not logged in")
-        } else {
-          fmt.Fprintf(w, "Logged in as: %s", (*u).UserName())
-        }
-  }
+	u, err := session.Active(r)
+	if err != nil {
+		fmt.Fprintf(w, "Not logged in")
+	} else {
+		fmt.Fprintf(w, "Logged in as: %s", (*u).UserName())
+	}
+}
 
-  func homeHandler(w http.ResponseWriter, r *http.Request) {
-          renderTemplate(w, "home", nil)
-  }
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	renderTemplate(w, "home", nil)
+}
 
-  func logInHandler(w http.ResponseWriter, r *http.Request) {
-    userName := r.FormValue("userName")
-    password := r.FormValue("password")
-    if userName != "" && password != "" {
-      u := user.New(USERS_DB, userName)
-      err := u.Validate(password)
-      if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-      }
-      session.Create(w, r, u)
-      http.Redirect(w, r, "/index", http.StatusFound)
-    } else {
-      renderTemplate(w, "login", nil)
-    }
-  }
+func logInHandler(w http.ResponseWriter, r *http.Request) {
+	userName := r.FormValue("userName")
+	password := r.FormValue("password")
+	if userName != "" && password != "" {
+		u := user.New(USERS_DB, userName)
+		err := u.Validate(password)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		session.Create(w, r, u)
+		http.Redirect(w, r, "/index", http.StatusFound)
+	} else {
+		renderTemplate(w, "login", nil)
+	}
+}
 
-  func signUpHandler(w http.ResponseWriter, r *http.Request) {
-    userName := r.FormValue("userName")
-    password := r.FormValue("password")
-    if userName != "" && password != "" {
-      u := user.New(USERS_DB, userName)
-      err := u.Add(password)
-      if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
-      }
-      session.Create(w, r, u)
-      http.Redirect(w, r, "/index", http.StatusFound)
-    } else {
-      renderTemplate(w, "signup", nil)
-    }
-  }
+func signUpHandler(w http.ResponseWriter, r *http.Request) {
+	userName := r.FormValue("userName")
+	password := r.FormValue("password")
+	if userName != "" && password != "" {
+		u := user.New(USERS_DB, userName)
+		err := u.Add(password)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		session.Create(w, r, u)
+		http.Redirect(w, r, "/index", http.StatusFound)
+	} else {
+		renderTemplate(w, "signup", nil)
+	}
+}
 
-  func logOutHandler(w http.ResponseWriter, r *http.Request) {
-    session.Destroy(w, r)
-    http.Redirect(w, r, "/index", http.StatusFound)
-  }
+func logOutHandler(w http.ResponseWriter, r *http.Request) {
+	session.Destroy(w, r)
+	http.Redirect(w, r, "/index", http.StatusFound)
+}
 
-  func main() {
-          http.HandleFunc("/", homeHandler)
-          http.HandleFunc("/index", indexHandler)
-          http.HandleFunc("/login", logInHandler)
-          http.HandleFunc("/logout", logOutHandler)
-          http.HandleFunc("/signup", signUpHandler)
-          http.HandleFunc("/view/", makeHandler(viewHandler))
-          http.HandleFunc("/edit/", makeHandler(editHandler))
-          http.HandleFunc("/save/", makeHandler(saveHandler))
-          http.HandleFunc("/static/", makeHandler(staticHandler))
-          log.Fatal(http.ListenAndServe(":8080", nil))
-  }
+func main() {
+	http.HandleFunc("/", homeHandler)
+	http.HandleFunc("/index", indexHandler)
+	http.HandleFunc("/login", logInHandler)
+	http.HandleFunc("/logout", logOutHandler)
+	http.HandleFunc("/signup", signUpHandler)
+	http.HandleFunc("/view/", makeHandler(viewHandler))
+	http.HandleFunc("/edit/", makeHandler(editHandler))
+	http.HandleFunc("/save/", makeHandler(saveHandler))
+	http.HandleFunc("/static/", makeHandler(staticHandler))
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}

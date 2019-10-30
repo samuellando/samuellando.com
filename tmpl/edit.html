@@ -4,6 +4,7 @@
 <body>
   <h1>{{.Title}}</h1>
   <form action="/save/{{.Title}}" method="POST">
+    <input type="text" value="{{.Title}}" name="title"><br>
     <textarea name="body">{{printf "%s" .Body}}</textarea><br>
     <input type="submit" value="Save">
   </form>

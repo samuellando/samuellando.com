@@ -1,0 +1,70 @@
+body {
+margin: 0;
+background: #002c35;
+}
+#container {
+position: relative;
+width: 100%;
+margin: 0 auto;
+        margin-top: 100vh;
+}
+.headers {
+color: white;
+opacity: 0.2;
+         text-shadow: 2px 2px #e57ec9;
+         font-size: 30px;
+margin: 0;
+}
+#System {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100vh;
+opacity: 1;
+animation: systemFadeIn 2s;
+           animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+}
+#title {
+position: absolute;
+left: 50%;
+transform: translateX(-50%);
+top: 20%;
+     font-size: 50px;
+opacity: 0.75;
+animation: titleFadeIn 2s;
+           animation-timing-function: cubic-bezier(1, 0.01, 0.86, 2.15);
+}
+.footer {
+position: absolute;
+left: 50%;
+transform: translateX(-50%);
+bottom: 10%;
+        font-size: 25px;
+opacity: 0.75;
+animation: titleFadeIn 2s;
+           animation-timing-function: cubic-bezier(1, 0.01, 0.86, 2.15);
+}
+.link {
+bottom: 5%;
+        font-size: 15px;
+        text-decoration: underline;
+} 
+#git {
+position: absolute;
+padding: 20px;
+}
+#git:hover {
+cursor: pointer;
+}
+
+/* Animations */
+
+@keyframes titleFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 0.75; }
+}
+@keyframes systemFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

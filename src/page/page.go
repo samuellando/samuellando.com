@@ -40,7 +40,7 @@ func New(directory, title string, body ...[]byte) *txtPage {
 	return p
 }
 
-func List(directory string) []string {
+func List(directory string, user *user.User) []string {
 	if !regexp.MustCompile("^[a-zA-Z0-9/]+").MatchString(directory) {
 		return nil
 	}
@@ -52,7 +52,16 @@ func List(directory string) []string {
 	for _, file := range files {
 		fileList = append(fileList, strings.ReplaceAll(file.Name(), ".txt", ""))
 	}
-	return fileList
+        pageList := make([]string, 0)
+        var p *txtPage
+        for _, page := range fileList {
+          p = New(directory, page)
+          p.Load()
+          if p.WhiteListed(user) {
+            pageList = append(pageList, page)
+          }
+        }
+	return pageList
 }
 
 type txtPage struct {
@@ -74,17 +83,22 @@ func (p *txtPage) Body() []byte {
 	return p.body
 }
 
-func (p *txtPage) AddUser(user user.User) {
-	p.users = append(p.users, user.UserName())
+func (p *txtPage) AddUser(user *user.User) {
+        if user != nil {
+          p.users = append(p.users, (*user).UserName())
+        }
 }
 
-func (p *txtPage) WhiteListed(user user.User) bool {
-	isWhiteListed := false
+func (p *txtPage) WhiteListed(user *user.User) bool {
 	if len(p.users) == 0 {
-		isWhiteListed = true
+		return true
 	}
+        if user == nil {
+          return false
+        }
+	isWhiteListed := false
 	for i := 0; i < len(p.users); i++ {
-		if p.users[i] == user.UserName() {
+		if p.users[i] == (*user).UserName() {
 			isWhiteListed = true
 			break
 		}
@@ -94,14 +108,24 @@ func (p *txtPage) WhiteListed(user user.User) bool {
 
 var validPath = regexp.MustCompile("^[a-zA-z0-9/]+.txt$")
 
-func (p *txtPage) Load() error {
-	if !validPath.MatchString(p.filePath()) {
+func (p *txtPage) verifyFile() error {
+        if !validPath.MatchString(p.filePath()) {
 		return INVALID_TITLE
 	}
-	data, err := ioutil.ReadFile(p.filePath())
-	if err != nil {
+        _, err := os.Stat(p.filePath())
+	if os.IsNotExist(err) {
 		return PAGE_NOT_FOUND
-	}
+	} else {
+          return PAGE_EXISTS
+        }
+}
+
+func (p *txtPage) Load() error {
+        err := p.verifyFile()
+        if err == INVALID_TITLE || err == PAGE_NOT_FOUND {
+          return err
+        }
+        data, _ := ioutil.ReadFile(p.filePath())
 	body := []byte(strings.Split(string(data), "\ufb4f")[0])
 	users := strings.Split(string(data), "\ufb4f")[1:]
 	p.body = body
@@ -110,9 +134,10 @@ func (p *txtPage) Load() error {
 }
 
 func (p *txtPage) Save() error {
-	if !validPath.MatchString(p.filePath()) {
-		return INVALID_TITLE
-	}
+        err := p.verifyFile()
+        if err == INVALID_TITLE {
+          return err
+        }
 	data := p.body
 	for i := 0; i < len(p.users); i++ {
 		data = append(data, append([]byte("\ufb4f"), []byte(p.users[i])...)...)
@@ -121,23 +146,17 @@ func (p *txtPage) Save() error {
 }
 
 func (p *txtPage) Add() error {
-	if !validPath.MatchString(p.filePath()) {
-		return INVALID_TITLE
-	}
-	_, err := os.Stat(p.filePath())
-	if os.IsExist(err) {
-		return PAGE_EXISTS
-	}
+        err := p.verifyFile()
+        if err == INVALID_TITLE || err == PAGE_EXISTS {
+          return err
+        }
 	return p.Save()
 }
 
 func (p *txtPage) Remove() error {
-	if !validPath.MatchString(p.filePath()) {
-		return INVALID_TITLE
-	}
-	_, err := os.Stat(p.filePath())
-	if os.IsNotExist(err) {
-		return PAGE_NOT_FOUND
-	}
+        err := p.verifyFile()
+        if err == INVALID_TITLE || err == PAGE_NOT_FOUND {
+          return err
+        }
 	return os.Remove(p.filePath())
 }

@@ -31,7 +31,7 @@ class System extends React.Component {
         <Body 
           radius={100}
           tilt={0}
-          spin={Math.PI / 20}
+          spin={Math.PI / 2000}
           numberOfArcs={10}
           arcTiltIncrement={Math.PI / 10}
           arcBorderWidth={1}

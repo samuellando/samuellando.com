@@ -39,7 +39,11 @@ class Body extends React.Component {
     var t = this.state.t;
 
     // This will relate the speed with the distace from the center.
-    t += 200/(x*x+y*y+z*z);
+    if (x + y + z != 0) {
+      t += 200/(x*x+y*y+z*z);
+    } else {
+      t += 0.02;
+    }
 
     var p = this.getPosition(t);
 
@@ -94,7 +98,7 @@ class Body extends React.Component {
     var arcs = [];
     var angleIncrement = Math.PI / this.state.numberOfArcs;
     var tilt = this.state.tilt;
-    var spin = this.state.spin;
+    var spin = 100 * this.state.spin;
     var radius = this.state.radius;
     var tiltIncrement = this.state.arcTiltIncrement;
     var borderColor = this.state.arcBorderColor;

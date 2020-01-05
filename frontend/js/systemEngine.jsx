@@ -136,9 +136,10 @@ class Body extends React.Component {
       margin: '0px auto',
       bottom: this.state.y+'px',
       left: this.state.x+'px',
-      zIndex: this.state.z+'px',
+      zIndex: Math.floor(this.state.z),
       position: 'absolute',
     };
+
 
     var arcs = this.createArcs(this.state.t);
 

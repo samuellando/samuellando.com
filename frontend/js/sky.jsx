@@ -48,8 +48,12 @@ class Sky extends React.Component {
   }
 
   render() {
+    var style = {
+      zIndex: -1000000,
+      position: "relative",
+    };
     return (
-      <div className='sky'>
+      <div className='sky' style={style}>
         {this.state.stars.map(star => <Star top={star.top} right={star.right} size={star.size} />)}
       </div>
     );

@@ -99,7 +99,7 @@ class Body extends React.Component {
     var angleIncrement = Math.PI / this.state.numberOfArcs;
     var tilt = this.state.tilt;
     var spin = 100 * this.state.spin;
-    var radius = this.state.radius;
+    var radius = this.state.radius + this.state.z;
     var tiltIncrement = this.state.arcTiltIncrement;
     var borderColor = this.state.arcBorderColor;
     var borderWidth = this.state.arcBorderWidth;

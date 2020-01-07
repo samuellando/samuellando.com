@@ -17,3 +17,7 @@ h1 {
   margin-top: -25px;
   text-align: center;
 }
+
+.system {
+  transform: translate(-50px);
+}

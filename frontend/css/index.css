@@ -21,3 +21,17 @@ h1 {
 .system {
   transform: translate(-50px);
 }
+
+.navigation {
+  position: absolute;
+  top: 70vh;
+  width: 100vw;
+  color: white;
+  padding: 0;
+  text-align: center;
+}
+
+.navigation li {
+  display: inline-block;
+  padding-left: 50px;
+}

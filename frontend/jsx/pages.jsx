@@ -4,14 +4,14 @@ class Page extends React.Componenet {
     this.state = {
       title: title,
       text: text,
-    }
+    };
+  }
 
-    render() {
+  render() {
       return(
         <h1>{this.state.title}</h1>
-        {markdownRender(this.state.text)}
+        //{markdownRender(this.state.text)}
       );
-    }
   }
 }
 
@@ -30,8 +30,8 @@ class PageMenu extends React.Component {
         <div id='page'>
           <ul>
             {this.state.pages.map(
-              page => <li onClick={loadPage(page.id)}>page.title</li>
-            );}
+              //page => <li onClick={loadPage(page.id)}>page.title</li>
+            )}
           </ul>
         </div>
       </div>

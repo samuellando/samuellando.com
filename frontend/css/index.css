@@ -2,7 +2,7 @@ body {
   margin: 0px;
 }
 
-h1 {
+#index h1 {
   position: absolute;
   top: 10vh;
   width: 100vw;
@@ -10,7 +10,7 @@ h1 {
   color: white;
 }
 
-.signature {
+#index .signature {
   color: white;
   height: 20px;
   margin: 0;
@@ -18,11 +18,11 @@ h1 {
   text-align: center;
 }
 
-.system {
+#index .system {
   transform: translate(-50px);
 }
 
-.navigation {
+#index .navigation {
   position: absolute;
   top: 70vh;
   width: 100vw;
@@ -31,7 +31,7 @@ h1 {
   text-align: center;
 }
 
-.navigation li {
+#index .navigation li {
   display: inline-block;
   padding-left: 50px;
 }

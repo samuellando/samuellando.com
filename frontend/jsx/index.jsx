@@ -22,7 +22,7 @@ class Navigation extends React.Component {
 class Home extends React.Component {
   render() {
     return (
-      <div>
+      <div id='index'>
         <Sky stars={1000} tick={20} />
         <h1>Samuel Lando</h1>
         <System planets={1} />

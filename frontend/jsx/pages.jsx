@@ -36,7 +36,10 @@ class Page extends React.Component {
 
   render() {
     return(
-      <div dangerouslySetInnerHTML={this.getMarkup()}>
+      <div id='pages'>
+        <PageNavigation />
+        <div id='page' dangerouslySetInnerHTML={this.getMarkup()}>
+        </div>
       </div>
     );
   }
@@ -47,6 +50,7 @@ class PageNavigation extends React.Component {
     return(
       <ul>
         <li onClick={loadHome}><h2>Home</h2></li>
+        <li onClick={loadPageMenu}><h2>Menu</h2></li>
       </ul>
     );
   }
@@ -63,7 +67,7 @@ class PageMenu extends React.Component {
 
   render() {
     return(
-      <div>
+      <div id='pages'>
         <PageNavigation />
         <div id='page'>
           <ul>
@@ -82,5 +86,5 @@ function loadPageMenu() {
 }
 
 function loadPage(id) {
-  ReactDOM.render(<Page id={id} />, document.getElementById('page'));
+  ReactDOM.render(<Page id={id} />, document.getElementById('root'));
 }

@@ -29,10 +29,26 @@ class Page extends React.Component {
     };
   }
 
+  getMarkup() {
+    var md = new Remarkable();
+    return {__html: md.render(this.state.text)};
+  }
+
   render() {
-      return(
-        this.state.text
-      );
+    return(
+      <div dangerouslySetInnerHTML={this.getMarkup()}>
+      </div>
+    );
+  }
+}
+
+class PageNavigation extends React.Component {
+  render() {
+    return(
+      <ul>
+        <li onClick={loadHome}><h2>Home</h2></li>
+      </ul>
+    );
   }
 }
 
@@ -46,9 +62,9 @@ class PageMenu extends React.Component {
   }
 
   render() {
-    console.log(this.state.pages);
     return(
       <div>
+        <PageNavigation />
         <div id='page'>
           <ul>
             {this.state.pages.map(

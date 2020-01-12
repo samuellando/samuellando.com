@@ -25,7 +25,7 @@ class Home extends React.Component {
       <div>
         <Sky stars={1000} tick={20} />
         <h1>Samuel Lando</h1>
-        <System planets={2} />
+        <System planets={1} />
         <Navigation />
         <Signature emoji="❤️" by="Sam" />
       </div>

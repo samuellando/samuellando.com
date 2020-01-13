@@ -1,3 +1,12 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+
+import loadPageMenu from './pages';
+import Sky from './sky';
+import System from './system';
+
+import './css/index.css';
+
 class Signature extends React.Component {
   render() {
     return(
@@ -33,7 +42,8 @@ class Home extends React.Component {
   }
 }
 
-function loadHome() {
+export default function loadHome() {
+  console.log("okay");
   ReactDOM.render(
     <Home />,
     document.getElementById('root')

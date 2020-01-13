@@ -1,4 +1,7 @@
-class System extends React.Component {
+import React from 'react';
+import Body from './systemEngine'
+
+export default class System extends React.Component {
   constructor(props) {
     super(props)
     this.state = {

@@ -1,3 +1,7 @@
+import React from 'react';
+
+import './css/sky.css';
+
 class Star extends React.Component {
   render() {
         var style = {
@@ -15,7 +19,7 @@ class Star extends React.Component {
   }
 }
 
-class Sky extends React.Component {
+export default class Sky extends React.Component {
   constructor(props) {
     super(props);
     this.state = {

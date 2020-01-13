@@ -1,3 +1,9 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Remarkable } from 'remarkable';
+
+import loadHome from './index';
+
 var pages = [
       {
         id: 0,
@@ -81,7 +87,7 @@ class PageMenu extends React.Component {
   }
 }
 
-function loadPageMenu() {
+export default function loadPageMenu() {
   ReactDOM.render(<PageMenu />, document.getElementById('root'));
 }
 

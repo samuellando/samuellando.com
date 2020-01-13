@@ -35,3 +35,7 @@ body {
   display: inline-block;
   padding-left: 50px;
 }
+
+#index h1, h2, p {
+  cursor: pointer;
+}

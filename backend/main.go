@@ -5,10 +5,7 @@ package main
 
 func main() {
   a := App{}
-  a.Initialize(
-    "pageAdmin",
-    "",
-    "pages")
+  a.Initialize()
 
     a.Run(":8080")
 }

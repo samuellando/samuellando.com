@@ -13,10 +13,7 @@ var a main.App
 
 func TestMain(m *testing.M) {
   a = main.App{}
-  a.Initialize(
-    "pageAdmin",
-    "password",
-    "testPages")
+  a.Initialize()
 
   ensureTableExists()
 
@@ -28,7 +25,7 @@ func TestMain(m *testing.M) {
 }
 
 const tableCreationQuery = `
-CREATE TABLE IF NOT EXISTS products
+CREATE TABLE IF NOT EXISTS testPages
 (
   id SERIAL,
   title TEXT NOT NULL,

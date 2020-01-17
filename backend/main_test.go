@@ -1,31 +1,29 @@
-
-package main_test
+package main
 
 import (
-  "os"
-  "testing"
+	"os"
+	"testing"
 
-  "."
-  "log"
-  "net/http"
-  "net/http/httptest"
-  "encoding/json"
-  "bytes"
+	"bytes"
+	"encoding/json"
+	"log"
+	"net/http"
+	"net/http/httptest"
 )
 
-var a main.App
+var a App
 
 func TestMain(m *testing.M) {
-  a = main.App{}
-  a.Initialize()
+	a = App{}
+	a.Initialize()
 
-  ensureTableExists()
+	ensureTableExists()
 
-  code := m.Run()
+	code := m.Run()
 
-  clearTable()
+	clearTable()
 
-  os.Exit(code)
+	os.Exit(code)
 }
 
 const tableCreationQuery = `
@@ -33,20 +31,20 @@ CREATE TABLE IF NOT EXISTS pages
 (
   id SERIAL,
   title TEXT NOT NULL,
-  text NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+  text TEXT NOT NULL,
   PRIMARY KEY (id)
 )
 `
 
 func ensureTableExists() {
-  if _, err := a.DB.Exec(tableCreationQuery); err != nil {
-    log.Fatal(err)
-  }
+	if _, err := a.DB.Exec(tableCreationQuery); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func clearTable() {
-  a.DB.Exec("DELETE FROM testPages")
-  a.DB.Exec("ALTER SEQUENCE pages_id_seq RESTART WITH 1")
+	a.DB.Exec("DELETE FROM pages")
+	a.DB.Exec("ALTER SEQUENCE pages_id_seq RESTART WITH 1")
 }
 
 func executeRequest(req *http.Request) *httptest.ResponseRecorder {
@@ -65,7 +63,7 @@ func checkResponseCode(t *testing.T, expected, actual int) {
 func TestEmptyTable(t *testing.T) {
 	clearTable()
 
-	req, _ := http.NewRequest("GET", "/page", nil)
+	req, _ := http.NewRequest("GET", "/pages", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -91,18 +89,18 @@ func TestGetNonExistentPage(t *testing.T) {
 }
 
 func TestCreatePage(t *testing.T) {
-  clearTable()
+	clearTable()
 
-  type Page struct {
-		title string
-		text  string
+	type Page struct {
+		Title string
+		Text  string
 	}
-	page := Page {
-		title:  "test page",
-		text:   "this is a test page",
+	page := Page{
+		Title: "test page",
+		Text:  "this is a test page",
 	}
 
-  payload, _ := json.Marshal(page)
+	payload, _ := json.Marshal(page)
 
 	req, _ := http.NewRequest("POST", "/page", bytes.NewBuffer(payload))
 	response := executeRequest(req)
@@ -116,7 +114,7 @@ func TestCreatePage(t *testing.T) {
 		t.Errorf("Expected page title to be 'test page'. Got '%v'", m["title"])
 	}
 
-	if m["text"] != 11.22 {
+	if m["text"] != "this is a test page" {
 		t.Errorf("Expected page text to be 'this is a test page'. Got '%v'", m["text"])
 	}
 
@@ -129,7 +127,7 @@ func TestGetPage(t *testing.T) {
 	clearTable()
 	addPages(1)
 
-	req, _ := http.NewRequest("GET", "/product/1", nil)
+	req, _ := http.NewRequest("GET", "/page/1", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -141,7 +139,7 @@ func addPages(count int) {
 	}
 
 	for i := 0; i < count; i++ {
-		a.DB.Exec("INSERT INTO pages(title, text) VALUES($1, $2)", "page pagetext")
+		a.DB.QueryRow("INSERT INTO pages(title, text) VALUES($1, $2)", "page", "pageText")
 	}
 }
 
@@ -152,18 +150,18 @@ func TestUpdatePage(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/page/1", nil)
 	response := executeRequest(req)
 	var originalPage map[string]interface{}
-  json.Unmarshal(response.Body.Bytes(), &originalPage)
+	json.Unmarshal(response.Body.Bytes(), &originalPage)
 
-  type Page struct {
+	type Page struct {
 		title string
 		text  string
 	}
-	page := Page {
-		title:  "new title",
-		text:   "new text",
+	page := Page{
+		title: "new title",
+		text:  "new text",
 	}
 
-  payload, _ := json.Marshal(page)
+	payload, _ := json.Marshal(page)
 
 	req, _ = http.NewRequest("PUT", "/page/1", bytes.NewBuffer(payload))
 	response = executeRequest(req)

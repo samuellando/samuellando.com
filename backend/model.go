@@ -1,15 +1,13 @@
-
 package main
 
-
 import (
-  "database/sql"
+	"database/sql"
 )
 
 type page struct {
-  ID    int     `json:"id"`
-  Title string  `json:"title"`
-  Text  string  `json:"text"`
+	ID    int    `json:"id"`
+	Title string `json:"title"`
+	Text  string `json:"text"`
 }
 
 func (p *page) getPage(db *sql.DB) error {
@@ -45,7 +43,7 @@ func (p *page) createPage(db *sql.DB) error {
 
 func getPages(db *sql.DB, start, count int) ([]page, error) {
 	rows, err := db.Query(
-		"SELECT id, title,  text FROM products LIMIT $1 OFFSET $2",
+		"SELECT id, title,  text FROM pages LIMIT $1 OFFSET $2",
 		count, start)
 
 	if err != nil {

@@ -2,10 +2,12 @@
 
 package main
 
+import "fmt"
 
 func main() {
-  a := App{}
-  a.Initialize()
+	a := App{}
+	a.Initialize()
 
-  a.Run(":8080")
+	fmt.Println("Serving")
+	a.Run(":8080")
 }

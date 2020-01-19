@@ -20,11 +20,13 @@ const (
 	dbname   = "personalWebsite"
 )
 
+// App provides the API.
 type App struct {
 	Router *mux.Router
 	DB     *sql.DB
 }
 
+// Initialize initializes the App object.
 func (a *App) Initialize() {
 	sqlInfo := fmt.Sprintf("host=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -163,6 +165,7 @@ func (a *App) initializeRoutes() {
 	a.Router.HandleFunc("/page/{id:[0-9]+}", a.deletePage).Methods("DELETE")
 }
 
+// Run listens and serves http.
 func (a *App) Run(addr string) {
 	log.Fatal(http.ListenAndServe(addr, a.Router))
 }

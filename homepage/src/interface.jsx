@@ -30,14 +30,14 @@ function ajax(method, url, payload) {
     req.open(method, url);
     req.onreadystatechange = function() {
       if (req.readyState == 4) {
-        var res = {
-          status: req.status,
-          data: JSON.parse(req.responseText)
-        };
         if (req.status == 200) {
+          var res = {
+            status: req.status,
+            data: JSON.parse(req.responseText)
+          };
           resolve(res);
         } else {
-          reject(res);
+          reject({status: req.status});
         } 
       }
     };

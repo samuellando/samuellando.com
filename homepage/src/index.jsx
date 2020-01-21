@@ -43,7 +43,6 @@ class Home extends React.Component {
 }
 
 export default function loadHome() {
-  console.log("okay");
   ReactDOM.render(
     <Home />,
     document.getElementById('root')

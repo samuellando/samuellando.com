@@ -4,35 +4,25 @@ import { Remarkable } from 'remarkable';
 
 import loadHome from './index';
 
-var pages = [
-      {
-        id: 0,
-        title: 'downloads',
-        text: '# dowloads page'
-      },
-      {
-        id: 1,
-        title: 'test1',
-        text: '# test1 page'
-      },
-      {
-        id: 2,
-        title: 'test2',
-        text: '# test2 page'
-      },
-    ];
+import Interface from './interface';
 
 class Page extends React.Component {
   constructor(props) {
     super();
-    // TODO Fetch the mardown from the backend.
-    var title = pages[props.id]['title'];
-    var text = pages[props.id]['text'];
-
     this.state = {
-      title: title,
-      text: text,
+      title: null,
+      text: null
     };
+    this.i = new Interface();
+    var callback = (state) => this.setState(state);
+    this.i.getPage(props.id).then(
+      function(response) {
+        callback(response.data);
+      },
+      function(error) {
+        callback({title: "Page Not Found."});
+      }
+    );
   }
 
   getMarkup() {
@@ -44,6 +34,7 @@ class Page extends React.Component {
     return(
       <div id='pages'>
         <PageNavigation />
+        <h1>{this.state.title}</h1>
         <div id='page' dangerouslySetInnerHTML={this.getMarkup()}>
         </div>
       </div>
@@ -65,23 +56,36 @@ class PageNavigation extends React.Component {
 class PageMenu extends React.Component {
   constructor() {
     super();
-    // TODO fetch list of pages {id, title} from the backend.
-    this.state = {
-      pages: pages
-    };
+    this.state = {pages: []};
+    this.i = new Interface();
+    var callback = (state) => this.setState(state);
+    this.i.getPages().then(
+      function(response) {
+        callback({pages: response.data});
+      },
+      function(error) {
+        callback({pages: null});
+      }
+    );
   }
 
   render() {
+    var output;
+    if (this.state.pages == null) {
+      output = <h1>No Pages Found.</h1>;
+    } else if (this.state.pages.length == 0) {
+      output = <h1>Loading...</h1>;
+    } else {
+      output = <ul>
+          {this.state.pages.map(
+            page => <li onClick={() => loadPage(page.id)}><h2>{page.title}</h2></li>
+          )}
+        </ul>;
+    }
     return(
       <div id='pages'>
         <PageNavigation />
-        <div id='page'>
-          <ul>
-            {this.state.pages.map(
-              page => <li onClick={() => loadPage(page.id)}><h2>{page.title}</h2></li>
-            )}
-          </ul>
-        </div>
+        {output}
       </div>
     );
   }

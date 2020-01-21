@@ -11,12 +11,12 @@ export default class Interface {
     return ajax("GET", backendURL+"/page/"+id)
   }
 
-  createPage(title, text) {
-    return ajax("POST", backendURL+"/page", {title:title, text:text});
+  createPage(payload) {
+    return ajax("POST", backendURL+"/page", payload);
   }
 
-  updatePage(id, title, text) {
-    return ajax("PUT", backendURL+"/page/"+id, {title:title, text:text});
+  updatePage(id, payload) {
+    return ajax("PUT", backendURL+"/page/"+id, payload);
   }
 
   deletePage(id) {
@@ -30,7 +30,7 @@ function ajax(method, url, payload) {
     req.open(method, url);
     req.onreadystatechange = function() {
       if (req.readyState == 4) {
-        if (req.status == 200) {
+        if (req.status == 200 || req.status == 201) {
           var res = {
             status: req.status,
             data: JSON.parse(req.responseText)

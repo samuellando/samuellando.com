@@ -103,6 +103,7 @@ class Editor extends React.Component {
     this.handleTitleChange = this.handleTitleChange.bind(this);
     this.handleTextChange = this.handleTextChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleDelete = this.handleDelete.bind(this);
 
     this.i = new Interface();
     var callback = (state) => this.setState(state);
@@ -149,6 +150,15 @@ class Editor extends React.Component {
     event.preventDefault();
   }
 
+  handleDelete(event) {
+    this.i = new Interface();
+    if (this.props.id >= 0) {
+      this.i.deletePage(this.props.id);
+    }
+    event.preventDefault();
+    loadPageMenu();
+  }
+
   render() {
     return (
       <div>
@@ -159,7 +169,8 @@ class Editor extends React.Component {
           <textarea value={this.state.text} onChange={this.handleTextChange} rows="4" cols="50">
           </textarea>
           <br/>
-          <input type='submit' value='save'/>
+          <input type='submit' value='Save'/>
+          <input type='button' value='Delete' onClick={this.handleDelete} />
         </form>
       </div>
     );

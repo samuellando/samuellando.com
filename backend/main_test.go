@@ -17,7 +17,7 @@ func TestMain(m *testing.M) {
 	a = App{}
 	a.Initialize()
 
-	ensureTableExists()
+	ensureTablesExists()
 
 	code := m.Run()
 
@@ -32,11 +32,25 @@ CREATE TABLE IF NOT EXISTS pages
   id SERIAL,
   title TEXT NOT NULL,
   text TEXT NOT NULL,
+  private boolean DEFAULT true,
   PRIMARY KEY (id)
-)
+);
+CREATE TABLE IF NOT EXISTS users
+(
+  id SERIAL,
+  userName TEXT NOT NULL,
+  password TEXT NOT NULL,
+  apikey TEXT NOT NULL,
+  PRIMARY KEY (id)
+);
+CREATE TABLE IF NOT EXISTS relations
+(
+  userid int NOT NULL,
+  pageid int NOT NULL
+);
 `
 
-func ensureTableExists() {
+func ensureTablesExists() {
 	if _, err := a.DB.Exec(tableCreationQuery); err != nil {
 		log.Fatal(err)
 	}
@@ -88,8 +102,9 @@ func TestGetNonExistentPage(t *testing.T) {
 	}
 }
 
-func TestCreatePage(t *testing.T) {
-	clearTable()
+func TestUserCreatePage(t *testing.T) {
+	clearTables()
+	createUsers(1)
 
 	type Page struct {
 		Title string
@@ -103,6 +118,7 @@ func TestCreatePage(t *testing.T) {
 	payload, _ := json.Marshal(page)
 
 	req, _ := http.NewRequest("POST", "/page", bytes.NewBuffer(payload))
+	req.Header.Set("API-key", "1")
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusCreated, response.Code)

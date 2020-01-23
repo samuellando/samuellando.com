@@ -287,11 +287,12 @@ func TestFailedGetAPIkey(t *testing.T) {
  *				PAGE TESTS
  */
 
-func TestGuestGetPublicPage(t *testing.T) {
+// getting public pages pages
+func TestGetPublicPage(t *testing.T) {
 	clearTables()
 	addPages(1, false)
 
-	req, _ := http.NewRequest("GET", "/page/1", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("GET", "/page/1", nil)
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -311,22 +312,60 @@ func TestGuestGetPublicPage(t *testing.T) {
 	}
 }
 
-func TestFailedGuestGetPrivatePage(t *testing.T) {
+// Getting private pages.
+func TestFailedGetPrivatePageAuthentication(t *testing.T) {
 	clearTables()
 	addPages(1, true)
+	addUsers(1)
 
-	req, _ := http.NewRequest("GET", "/page/1", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("GET", "/page/1", nil)
+	q := req.URL.Query()
+	q.Add("APIkey", "badAPIkey")
+	req.URL.RawQuery = q.Encode()
+
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusUnauthorized, response.Code)
+
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["error"] != "Invalid APIkey" {
+		t.Errorf("Expected error to be 'Invalid APIkey'. Got '%v'", m["error"])
+	}
 }
 
-func TestUserGetPublicPage(t *testing.T) {
+func TestFailedGetPrivatePageRelation(t *testing.T) {
 	clearTables()
-	addPages(1, false)
+	addPages(1, true)
 	addUsers(1)
 
-	req, _ := http.NewRequest("GET", "/page/1", bytes.NewBuffer(payload))
+	req, _ := http.NewRequest("GET", "/page/1", nil)
+	q := req.URL.Query()
+	q.Add("APIkey", "1")
+	req.URL.RawQuery = q.Encode()
+
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusUnauthorized, response.Code)
+
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["error"] != "User has no relation to page" {
+		t.Errorf("Expected error to be 'User has no relation to page'. Got '%v'", m["error"])
+	}
+}
+
+func TestViewerGetPrivatePage(t *testing.T) {
+	clearTables()
+	addPages(1, true)
+	addUsers(1)
+	addRelation(1, 1, 0)
+
+	req, _ := http.NewRequest("GET", "/page/1", nil)
+	q := req.URL.Query()
+	q.Add("APIkey", "1")
+	req.URL.RawQuery = q.Encode()
+
 	response := executeRequest(req)
 
 	checkResponseCode(t, http.StatusOK, response.Code)
@@ -346,64 +385,123 @@ func TestUserGetPublicPage(t *testing.T) {
 	}
 }
 
-func TestUserGetPrivatePage(t *testing.T) {}
+func TestEditorGetPrivatePage(t *testing.T) {
+	clearTables()
+	addPages(1, true)
+	addUsers(1)
+	addRelation(1, 1, 1)
 
-func TestViewerGetPublicPage(t *testing.T) {}
+	req, _ := http.NewRequest("GET", "/page/1", nil)
+	q := req.URL.Query()
+	q.Add("APIkey", "1")
+	req.URL.RawQuery = q.Encode()
 
-func TestViewerGetPrivatePage(t *testing.T) {}
+	response := executeRequest(req)
 
-func TestEditorGetPublicPage(t *testing.T) {}
+	checkResponseCode(t, http.StatusOK, response.Code)
 
-func TestEditorGetPrivatePage(t *testing.T) {}
+	json.Unmarshal(response.Body.Bytes(), &m)
 
-func TestOwnerGetPublicPage(t *testing.T) {}
+	if m["title"] != "title" {
+		t.Errorf("Expected page title to be 'title'. Got '%v'", m["title"])
+	}
 
-func TestOwnerGetPrivatePage(t *testing.T) {}
+	if m["text"] != "text" {
+		t.Errorf("Expected page text to be 'text'. Got '%v'", m["text"])
+	}
 
-func TestGuestPostPublicPage(t *testing.T) {}
+	if m["id"] != 1.0 {
+		t.Errorf("Expected page id to be 1, got '%v'", m["id"])
+	}
+}
 
-func TestGuestPostPrivatePage(t *testing.T) {}
+func TestOwnerGetPrivatePage(t *testing.T) {
+	clearTables()
+	addPages(1, true)
+	addUsers(1)
+	addRelation(1, 1, 2)
 
-func TestUserPostPublicPage(t *testing.T) {}
+	req, _ := http.NewRequest("GET", "/page/1", nil)
+	q := req.URL.Query()
+	q.Add("APIkey", "1")
+	req.URL.RawQuery = q.Encode()
 
-func TestUserPostPrivatePage(t *testing.T) {}
+	response := executeRequest(req)
 
-func TestFailedGuestPutPublicPage(t *test.T) {}
+	checkResponseCode(t, http.StatusOK, response.Code)
 
-func TestFailedGuestPutPrivatePage(t *test.T) {}
+	json.Unmarshal(response.Body.Bytes(), &m)
 
-func TestFailedUserPutPublicPage(t *test.T) {}
+	if m["title"] != "title" {
+		t.Errorf("Expected page title to be 'title'. Got '%v'", m["title"])
+	}
 
-func TestFailedUserPutPrivatePage(t *test.T) {}
+	if m["text"] != "text" {
+		t.Errorf("Expected page text to be 'text'. Got '%v'", m["text"])
+	}
 
-func TestFailedViewerPutPublicPage(t *test.T) {}
+	if m["id"] != 1.0 {
+		t.Errorf("Expected page id to be 1, got '%v'", m["id"])
+	}
+}
 
-func TestFailedViewerPutPrivatePage(t *test.T) {}
+// Posting pages.
+func TestFailedPostPageAuthentication(t *testing.T) {
+	clearTables()
+	addUsers(1)
 
-func TestOwnerPutPublicPage(t *test.T) {}
+	title := "Page title"
+	text := "Page title"
 
-func TestOwnerPutPrivatePage(t *test.T) {}
+	type Page struct {
+		Title string
+		Text  string
+	}
+	page := Page{
+		Title:   title,
+		Text:    text,
+		Private: true,
+	}
 
-func TestEditorPutPublicPage(t *test.T) {}
+	payload, _ := json.Marshal(page)
+
+	req, _ := http.NewRequest("POST", "/page", bytes.NewBuffer(payload))
+	q := req.URL.Query()
+	q.Add("APIkey", "bad APIkey")
+	req.URL.RawQuery = q.Encode()
+
+	response := executeRequest(req)
+
+	checkResponseCode(t, http.StatusUnauthorized, response.Code)
+
+	json.Unmarshal(response.Body.Bytes(), &m)
+
+	if m["error"] != "Invalid APIkey" {
+		t.Errorf("Expected error to be 'Invalid APIkey'. Got '%v'", m["error"])
+	}
+}
+
+func TestPostPage(t *testing.T) {
+
+}
+
+// Putting pages.
+func TestFailedPutPageAuthentication(t *test.T) {}
+
+func TestFailedPutPageRelation(t *test.T) {}
 
 func TestEditorPutPrivatePage(t *test.T) {}
 
-func TestFailedUserDeletePublicPage(t *testing.T) {}
+func TestOwnerPutPrivatePage(t *test.T) {}
 
-func TestFailedUserDeletePrivatePage(t *testing.T) {}
+// Deleteing pages.
+func TestFailedDeletePageAuthentication(t *testing.T) {}
 
-func TestFailedViewerDeletePublicPage(t *testing.T) {}
+func TestFailedDeletePageRelation(t *testing.T) {}
 
-func TestFailedViewerDeletePrivatePage(t *testing.T) {}
+func TestOwnerDeletePage(t *testing.T) {}
 
-func TestFailedEditorDeletePublicPage(t *testing.T) {}
-
-func TestFailedEditorDeletePrivatePage(t *testing.T) {}
-
-func TestOwnerGetDeletePublicPage(t *testing.T) {}
-
-func TestOwnerGetDeletePrivatePage(t *testing.T) {}
-
+// Get page listings.
 func TestGuestGetPages(t *testing.T) {}
 
-func TestUserGetPages(t *testing.T) {}
+func TestuserGetPages(t *testing.T) {}

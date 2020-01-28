@@ -1,5 +1,5 @@
 import React from 'react';
-import Body from './systemEngine'
+import Body from './Body'
 
 export default class System extends React.Component {
   constructor(props) {

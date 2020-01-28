@@ -2,23 +2,6 @@ import React from 'react';
 
 import './css/sky.css';
 
-class Star extends React.Component {
-  render() {
-        var style = {
-      position: 'absolute',
-      top: this.props.top+"vh",
-      left: this.props.right+"vw",
-      height: this.props.size+"px",
-      width: this.props.size+"px",
-    }
-
-    return(
-      <div className='star' style={style}>
-      </div>
-    );
-  }
-}
-
 export default class Sky extends React.Component {
   constructor(props) {
     super(props);

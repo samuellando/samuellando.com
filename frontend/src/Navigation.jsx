@@ -5,7 +5,7 @@ export default class Navigation extends React.Component {
     return(
       // TODO add planet control.
       <ul className='navigation'>
-        <h2 onClick={loadPageMenu}>Pages</h2>
+        <h2 onClick={this.props.app.loadPageMenu}>Pages</h2>
       </ul>
     );
   }

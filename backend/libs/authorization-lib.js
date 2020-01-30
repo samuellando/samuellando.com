@@ -23,8 +23,8 @@ export async function get(event) {
   }
 }
 
-export async function post(event, context) {
-    if (await get(event) != 0) {
+export async function post(event, force) {
+    if (force && await get(event) != 0) {
         return false;
     }
 

@@ -1,20 +1,21 @@
 import * as dynamoDbLib from "./libs/dynamodb-lib";
+import * as authorizationLib from "./libs/authorization-lib";
 import { success, failure } from "./libs/response-lib";
 
 export async function main(event, context) {
   const params = {
     TableName: process.env.tableName,
-    // 'Key' defines the partition key and sort key of the item to be retrieved
-    // - 'userId': Identity Pool identity id of the authenticated user
-    // - 'noteId': path parameter
+
     Key: {
-      userid: event.requestContext.identity.cognitoIdentityId,
       pageid: event.pathParameters.id
     }
   };
 
   try {
     const result = await dynamoDbLib.call("get", params);
+    if (result.Item.private || !authorizationLib.get(event)) {
+      return false;
+    }
     if (result.Item) {
       // Return the retrieved item
       return success(result.Item);

@@ -3,8 +3,10 @@
  */
 
 import * as DbLib from "./database-lib";
+import uuid from "uuid";
 
 export function addPage(page) {
+    page.pageid = uuid.v1();
     return DbLib.addItem(process.env.pageTableName, page)
 }
 

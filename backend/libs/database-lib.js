@@ -68,3 +68,28 @@ export function retrieveItem(table, key) {
         return false;
     }
 }
+
+export function listItems(table, key) {
+    var keyConditionExpression = "";
+    var expressionAttributeValues;
+    for (var i = 0; i < Object.keys(item); i++) {
+        updateExpression += " "+Object.keys(item)[i]+
+            " = :"+Object.keys(item)[i]+",";
+
+        expressionAttributeValues[":"+Object.keys(item)] = 
+            item.Object.keys(item);
+    }
+    const params = {
+        TableName: table,
+
+        KeyConditionExpression: keyConditionExpression,
+        ExpressionAttributeValues: expressionAttributeValues,
+    };
+
+    try {
+        var result = await dynamoDbLib.call("query", params);
+        return result.Items;
+    } catch (e) {
+        return false;
+  }
+}

@@ -17,3 +17,8 @@ export function retrieveAuthorization(userid, pageid) {
     return DbLib.addItem(process.env.authorizationTableName,
         {"userid": userid, "pageid": pageid});
 }
+
+export function listAuthorizations(userid) {
+    return DbLib.listItems(process.env.authorizationTableName,
+        {"userid": userid});
+}

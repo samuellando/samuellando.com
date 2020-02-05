@@ -5,7 +5,7 @@
 
 import * as dynamoDbLib from "./dynamodb-lib";
 
-export function addItem(table, item) {
+export async function addItem(table, item) {
     const params = {
         TableName: table,
         Item: item,
@@ -18,7 +18,7 @@ export function addItem(table, item) {
     }
 }
 
-export function removeItem(table, key) {
+export async function removeItem(table, key) {
     const params = {
         TableName: table,
         Key: key,
@@ -31,7 +31,7 @@ export function removeItem(table, key) {
     }
 }
 
-export function editItem(table, key, item) {
+export async function editItem(table, key, item) {
     var updateExpression = "SET";
     var expressionAttributeValues;
     for (var i = 0; i < Object.keys(item); i++) {
@@ -56,7 +56,7 @@ export function editItem(table, key, item) {
     }
 }
 
-export function retrieveItem(table, key) {
+export async function retrieveItem(table, key) {
     const params = {
         TableName: table,
         Key: key,
@@ -69,7 +69,7 @@ export function retrieveItem(table, key) {
     }
 }
 
-export function listItems(table, key) {
+export async function listItems(table, key) {
     var keyConditionExpression = "";
     var expressionAttributeValues;
     for (var i = 0; i < Object.keys(item); i++) {

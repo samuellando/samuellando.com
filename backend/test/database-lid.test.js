@@ -1,39 +1,42 @@
-import * as databaseLib from "../libs/database-lib";
+import * as dbLib from "../libs/database-lib";
 
 import AWS from "aws-sdk";
 AWS.config.update({region:'ca-central-1'});
 
-
-var db = new AWS.DynamoDB({ endpoint: 'http://localhost:8000'});
+const db = new AWS.DynamoDB({endpoint: 'http://localhost:8000'});
 
 const tableName = "pages";
 
+function call(action, params) {
+  const callDb = new AWS.DynamoDB.DocumentClient({endpoint: 'http://localhost:8000'});
+  return callDb[action](params).promise();
+}
+
 async function createTable() {
     var status = false;
-    await db.createTable({
+    db.createTable({
             AttributeDefinitions: [{AttributeName: 'pageid', AttributeType: 'S'}],
-            TableName: "pages", 
+            TableName: tableName, 
             KeySchema: [{AttributeName: 'pageid', KeyType: 'HASH'}],
             ProvisionedThroughput: {
                 'ReadCapacityUnits': 5,
                 'WriteCapacityUnits': 5
             },
-        },
-        (err, data) => {
+        }, (err, data) => {
             if (err == null) {
-                status = true;
+                return true;
             } else {
-                status = false;
+                return false;
             }
         }
-    ).promise();
+    );
     return status;
 }
 
 async function deleteTable() {
     var status = false;
     await db.deleteTable({
-            TableName: "pages", 
+            TableName: tableName, 
         },
         (err, data) => {
             if (err === null) {
@@ -46,15 +49,30 @@ async function deleteTable() {
     return status;
 }
 
-test("connecting to db", async done => {
-        await createTable();
-        db.listTables(
-            (err, data) => {
-                console.log(err);
-                console.log(data);
-                done();
+describe('dblib', () => {
+        beforeEach(async () => {
+                await createTable();
             }
         );
-        await deleteTable();
+
+        afterEach(async () => {
+                await deleteTable();
+            }
+        );
+
+        test("add item", async () => {
+                await dbLib.addItem(tableName, {pageid: "TEST-PAGE", data: "Test Data"}, call);
+                const res = await call('query', 
+                    {
+                        TableName: tableName, 
+                        KeyConditionExpression: "pageid=:pageid", 
+                        ExpressionAttributeValues: {":pageid": "TEST-PAGE"}
+                    }
+                );
+                expect(res.Count).toEqual(1);
+                expect(res.Items[0].pageid).toEqual('TEST-PAGE');
+                expect(res.Items[0].data).toEqual('Test Data');
+            }
+        );
     }
 );

@@ -7,6 +7,12 @@ const db = new AWS.DynamoDB({endpoint: 'http://localhost:8000'});
 
 const tableName = "pages";
 
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 function call(action, params) {
   const callDb = new AWS.DynamoDB.DocumentClient({endpoint: 'http://localhost:8000'});
   return callDb[action](params).promise();
@@ -50,12 +56,13 @@ async function deleteTable() {
 }
 
 describe('dblib', () => {
-        beforeEach(async () => {
+        beforeAll(async () => {
                 await createTable();
+                await sleep(1000);
             }
         );
 
-        afterEach(async () => {
+        afterAll(async () => {
                 await deleteTable();
             }
         );
@@ -72,6 +79,22 @@ describe('dblib', () => {
                 expect(res.Count).toEqual(1);
                 expect(res.Items[0].pageid).toEqual('TEST-PAGE');
                 expect(res.Items[0].data).toEqual('Test Data');
+            }
+        );
+
+        test("remove item", async () => {
+                await call('put', {TableName: tableName, Item: {pageid: "TEST-PAGE2", data: "Test Data"}});
+                const err = await dbLib.removeItem(tableName, "pageid=:pageid", {":pageid": "TEST-PAGE2"}, call);
+                const res = await call('query', 
+                    {
+                        TableName: tableName, 
+                        KeyConditionExpression: "pageid=:pageid", 
+                        ExpressionAttributeValues: {":pageid": "TEST-PAGE2"}
+                    }
+                );
+                console.log(res);
+                console.log(err);
+                //expect(res.Count).toEqual(0);
             }
         );
     }

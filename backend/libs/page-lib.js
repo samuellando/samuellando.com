@@ -26,8 +26,8 @@ export function editPage(userid, pageid, title, text) {
     return DbLib.editItem(tableName, {userid: userid, pageid: pageid}, {title: title, text: text});
 }
 
-export function retrievePage(pageid) {
-    return DbLib.addItem(process.env.pageTableName, {"pageid": pageid});
+export function retrievePage(userid, pageid) {
+    return DbLib.retrieveItem(tableName, {userid: userid,pageid: pageid});
 }
 
 export function listPublicPages() {

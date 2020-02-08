@@ -19,7 +19,7 @@ provider:
   # These environment variables are made available to our functions
   # under process.env.
   environment:
-    tableName: pages
+    pagesTableName: pages
     authTableName: authorizations
 
   # 'iamRoleStatements' defines the permission policy for the Lambda function.

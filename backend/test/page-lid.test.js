@@ -77,7 +77,7 @@ describe('pagelib', () => {
         );
 
         test("remove page", async () => {
-                await dbLib.addItem(tableName, {userid: "USER-2", pageid: "PAGE-2", text: "Page Text", title: "Page Title", private: false});
+                await dbLib.addItem(tableName, {userid: "USER-2", pageid: "PAGE-2", text: "Page Text", title: "Page Title"});
                 await pageLib.removePage("USER-2", "PAGE-2");
 
                 const res = await dbLib.listItems(tableName, {userid: "USER-2"});
@@ -87,7 +87,7 @@ describe('pagelib', () => {
         );
 
         test("edit page", async () => {
-                await dbLib.addItem(tableName, {userid: "USER-3", pageid: "PAGE-3", text: "Page Text", title: "Page Title", private: false});
+                await dbLib.addItem(tableName, {userid: "USER-3", pageid: "PAGE-3", text: "Page Text", title: "Page Title"});
                 await pageLib.editPage("USER-3", "PAGE-3", "New Title", "New Text");
 
                 const res = await dbLib.listItems(tableName, {userid: "USER-3"});
@@ -97,11 +97,17 @@ describe('pagelib', () => {
                 expect(res.Items[0].title).toEqual('New Title');
                 expect(res.Items[0].text).toEqual('New Text');
                 expect(res.Items[0].pageid).toEqual('PAGE-3');
- 
             }
         );
 
         test("retrieve page", async () => {
+                await dbLib.addItem(tableName, {userid: "USER-4", pageid: "PAGE-4", text: "Page Text", title: "Page Title"});
+                const res = await pageLib.retrievePage("USER-4", "PAGE-4");
+
+                expect(res.userid).toEqual('USER-4');
+                expect(res.title).toEqual('Page Title');
+                expect(res.text).toEqual('Page Text');
+                expect(res.pageid).toEqual('PAGE-4');
             }
         );
 

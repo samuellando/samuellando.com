@@ -84,7 +84,7 @@ describe('dblib', () => {
 
         test("remove item", async () => {
                 await call('put', {TableName: tableName, Item: {pageid: "TEST-PAGE2", data: "Test Data"}});
-                const err = await dbLib.removeItem(tableName, {pageid: "TEST-PAGE2"}, call);
+                await dbLib.removeItem(tableName, {pageid: "TEST-PAGE2"}, call);
                 const res = await call('query', 
                     {
                         TableName: tableName, 
@@ -93,6 +93,23 @@ describe('dblib', () => {
                     }
                 );
                 expect(res.Count).toEqual(0);
+            }
+        );
+
+        test("edit item", async () => {
+                await call('put', {TableName: tableName, Item: {pageid: "TEST-PAGE3", data: "Test Data"}});
+                await dbLib.editItem(tableName, {pageid: "TEST-PAGE3"},
+                    {data: "New data"}, call);
+                const res = await call('query', 
+                    {
+                        TableName: tableName, 
+                        KeyConditionExpression: "pageid=:pageid", 
+                        ExpressionAttributeValues: {":pageid": "TEST-PAGE3"}
+                    }
+                );
+                expect(res.Count).toEqual(1);
+                expect(res.Items[0].pageid).toEqual('TEST-PAGE3');
+                expect(res.Items[0].data).toEqual('New data');
             }
         );
     }

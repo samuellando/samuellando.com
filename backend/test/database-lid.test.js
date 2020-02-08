@@ -21,9 +21,10 @@ function call(action, params) {
 async function createTable() {
     var status = false;
     db.createTable({
-            AttributeDefinitions: [{AttributeName: 'pageid', AttributeType: 'S'}],
+            AttributeDefinitions: [{AttributeName: 'userid', AttributeType: 'S'}, {AttributeName: 'pageid', AttributeType: 'S'}],
             TableName: tableName, 
-            KeySchema: [{AttributeName: 'pageid', KeyType: 'HASH'}],
+            KeySchema: [{AttributeName: 'userid', KeyType: 'HASH'},
+                {AttributeName: 'pageid', KeyType: 'RANGE'}],
             ProvisionedThroughput: {
                 'ReadCapacityUnits': 5,
                 'WriteCapacityUnits': 5
@@ -68,28 +69,29 @@ describe('dblib', () => {
         );
 
         test("add item", async () => {
-                await dbLib.addItem(tableName, {pageid: "TEST-PAGE", data: "Test Data"}, call);
+                await dbLib.addItem(tableName, {userid: "USERID", pageid: "TEST-PAGE", data: "Test Data"}, call);
                 const res = await call('query', 
                     {
                         TableName: tableName, 
-                        KeyConditionExpression: "pageid=:pageid", 
-                        ExpressionAttributeValues: {":pageid": "TEST-PAGE"}
+                        KeyConditionExpression: "userid=:userid AND pageid=:pageid", 
+                        ExpressionAttributeValues: {":pageid": "TEST-PAGE", ":userid": "USERID"}
                     }
                 );
                 expect(res.Count).toEqual(1);
+                expect(res.Items[0].userid).toEqual('USERID');
                 expect(res.Items[0].pageid).toEqual('TEST-PAGE');
                 expect(res.Items[0].data).toEqual('Test Data');
             }
         );
 
         test("remove item", async () => {
-                await call('put', {TableName: tableName, Item: {pageid: "TEST-PAGE2", data: "Test Data"}});
-                await dbLib.removeItem(tableName, {pageid: "TEST-PAGE2"}, call);
+                await call('put', {TableName: tableName, Item: {userid: "USERID", pageid: "TEST-PAGE2", data: "Test Data"}});
+                await dbLib.removeItem(tableName, {userid: "USERID", pageid: "TEST-PAGE2"}, call);
                 const res = await call('query', 
                     {
                         TableName: tableName, 
-                        KeyConditionExpression: "pageid=:pageid", 
-                        ExpressionAttributeValues: {":pageid": "TEST-PAGE2"}
+                        KeyConditionExpression: "pageid=:pageid AND userid=:userid", 
+                        ExpressionAttributeValues: {":pageid": "TEST-PAGE2", ":userid": "USERID"}
                     }
                 );
                 expect(res.Count).toEqual(0);
@@ -97,35 +99,43 @@ describe('dblib', () => {
         );
 
         test("edit item", async () => {
-                await call('put', {TableName: tableName, Item: {pageid: "TEST-PAGE3", data: "Test Data"}});
-                await dbLib.editItem(tableName, {pageid: "TEST-PAGE3"},
+                await call('put', {TableName: tableName, Item: {userid: "USERID", pageid: "TEST-PAGE3", data: "Test Data"}});
+                await dbLib.editItem(tableName, {userid: "USERID", pageid: "TEST-PAGE3"},
                     {data: "New data"}, call);
                 const res = await call('query', 
                     {
                         TableName: tableName, 
-                        KeyConditionExpression: "pageid=:pageid", 
-                        ExpressionAttributeValues: {":pageid": "TEST-PAGE3"}
+                        KeyConditionExpression: "userid=:userid AND pageid=:pageid", 
+                        ExpressionAttributeValues: {":pageid": "TEST-PAGE3", ":userid": "USERID"}
                     }
                 );
                 expect(res.Count).toEqual(1);
+                expect(res.Items[0].userid).toEqual('USERID');
                 expect(res.Items[0].pageid).toEqual('TEST-PAGE3');
                 expect(res.Items[0].data).toEqual('New data');
             }
         );
 
         test("retrieve item", async () => {
-                await call('put', {TableName: tableName, Item: {pageid: "TEST-PAGE4", data: "Test Data"}});
-                await dbLib.retrieveItem(tableName, {pageid: "TEST-PAGE4"}, call);
-                const res = await call('query', 
-                    {
-                        TableName: tableName, 
-                        KeyConditionExpression: "pageid=:pageid", 
-                        ExpressionAttributeValues: {":pageid": "TEST-PAGE4"}
-                    }
-                );
-                expect(res.Count).toEqual(1);
-                expect(res.Items[0].pageid).toEqual('TEST-PAGE4');
-                expect(res.Items[0].data).toEqual('Test Data');
+                await call('put', {TableName: tableName, Item: {userid: "USERID", pageid: "TEST-PAGE4", data: "Test Data"}});
+                const res = await dbLib.retrieveItem(tableName, {userid: "USERID", pageid: "TEST-PAGE4"}, call);
+                expect(res.userid).toEqual('USERID');
+                expect(res.pageid).toEqual('TEST-PAGE4');
+                expect(res.data).toEqual('Test Data');
+            }
+        );
+
+        test("list items", async () => {
+                await call('put', {TableName: tableName, Item: {userid: "USERID", pageid: "TEST-PAGE5", data: "Test Data 1"}});
+                await call('put', {TableName: tableName, Item: {userid: "USERID", pageid: "TEST-PAGE5", data: "Test Data 2"}});
+                const res = await dbLib.listItems(tableName, {userid: "USERID"}, call);
+                expect(res.Count).toEqual(2);
+                expect(res.Items[0].userid).toEqual('USERID');
+                expect(res.Items[0].pageid).toEqual('TEST-PAGE5');
+                expect(res.Items[0].data).toEqual('Test Data 1');
+                expect(res.Items[1].userid).toEqual('USERID');
+                expect(res.Items[1].pageid).toEqual('TEST-PAGE5');
+                expect(res.Items[1].data).toEqual('Test Data 2');
             }
         );
     }

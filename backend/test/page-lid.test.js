@@ -65,14 +65,14 @@ describe('pagelib', () => {
         );
 
         test("add page", async () => {
-                await pageLib.addPage("USER-1", "Test Title", "Test Text", true);
+                await pageLib.addPage("USER-1", "Test Title", "Test Text");
                 const res = await dbLib.listItems(tableName, {userid: "USER-1"});
 
                 expect(res.Count).toEqual(1);
                 expect(res.Items[0].userid).toEqual('USER-1');
                 expect(res.Items[0].title).toEqual('Test Title');
                 expect(res.Items[0].text).toEqual('Test Text');
-                expect(res.Items[0].private).toBeDefined();
+                expect(res.Items[0].pageid).toBeDefined();
             }
         );
 
@@ -87,6 +87,17 @@ describe('pagelib', () => {
         );
 
         test("edit page", async () => {
+                await dbLib.addItem(tableName, {userid: "USER-3", pageid: "PAGE-3", text: "Page Text", title: "Page Title", private: false});
+                await pageLib.editPage("USER-3", "PAGE-3", "New Title", "New Text");
+
+                const res = await dbLib.listItems(tableName, {userid: "USER-3"});
+
+                expect(res.Count).toEqual(1);
+                expect(res.Items[0].userid).toEqual('USER-3');
+                expect(res.Items[0].title).toEqual('New Title');
+                expect(res.Items[0].text).toEqual('New Text');
+                expect(res.Items[0].pageid).toEqual('PAGE-3');
+ 
             }
         );
 

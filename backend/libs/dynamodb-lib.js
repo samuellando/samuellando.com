@@ -5,8 +5,15 @@
 
 import AWS from "aws-sdk";
 
-export function call(action, params) {
-  const dynamoDb = new AWS.DynamoDB.DocumentClient();
+var dynamoDb;
 
+if (process.env.NODE_ENV === 'test') {
+  AWS.config.update({region:'ca-central-1'});
+  dynamoDb = new AWS.DynamoDB.DocumentClient({endpoint: 'http://localhost:8000'});
+} else {
+  //dynamoDb = new AWS.DynamoDB.DocumentClient();
+}
+
+export function call(action, params) {
   return dynamoDb[action](params).promise();
 }

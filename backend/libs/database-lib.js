@@ -5,46 +5,33 @@
 
 import * as dynamoDbLib from "./dynamodb-lib";
 
-export async function addItem(table, item, call) {
-    if (!call) {
-        call = dynamoDbLib.call;
-    }
-
+export async function addItem(table, item) {
     const params = {
         TableName: table,
         Item: item,
     };
     try {
-        await call("put", params);
+        await dynamoDbLib.call("put", params);
         return true;
     } catch (e) {
         return false;
     }
 }
 
-export async function removeItem(table, key, call) {
-    if (!call) {
-        call = dynamoDbLib.call;
-    }
-
+export async function removeItem(table, key) {
     const params = {
         TableName: table,
         Key: key
     };
     try {
-        await call("delete", params);
+        await dynamoDbLib.call("delete", params);
         return true;
     } catch (e) {
-        console.log(e);
         return false;
     }
 }
 
-export async function editItem(table, key, item, call) {
-    if (call === undefined) {
-        call = dynamoDbLib.call;
-    }
-
+export async function editItem(table, key, item) {
     var updateExpression = "SET";
     var expressionAttributeValues  = {};
     var expressionAttributeNames = {};
@@ -67,7 +54,7 @@ export async function editItem(table, key, item, call) {
         ReturnValues: "ALL_NEW"
     };
     try {
-        await call("update", params);
+        await dynamoDbLib.call("update", params);
         return true;
     } catch (e) {
         return false;
@@ -80,17 +67,13 @@ export async function editItem(table, key, item, call) {
  * @param {*} call 
  * @returns a single item.
  */
-export async function retrieveItem(table, key, call) {
-    if (call === undefined) {
-        call = dynamoDbLib.call;
-    }
-
+export async function retrieveItem(table, key) {
     const params = {
         TableName: table,
         Key: key,
     };
     try {
-        const result = await call("get", params);
+        const result = await dynamoDbLib.call("get", params);
         return result.Item;
     } catch (e) {
         return false;
@@ -103,11 +86,7 @@ export async function retrieveItem(table, key, call) {
  * @param {*} call 
  * @returns An object with Count int and Items array.
  */
-export async function listItems(table, key, call) {
-    if (call === undefined) {
-        call = dynamoDbLib.call;
-    }
-
+export async function listItems(table, key) {
     var keyConditionExpression = "";
     var expressionAttributeValues = {};
     var expressionAttributeNames = {};
@@ -130,7 +109,7 @@ export async function listItems(table, key, call) {
     };
 
     try {
-        var result = await call("query", params);
+        var result = await dynamoDbLib.call("query", params);
         return result;
     } catch (e) {
         return false;

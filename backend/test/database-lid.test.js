@@ -1,9 +1,11 @@
-import * as dbLib from "../libs/database-lib";
-
 import AWS from "aws-sdk";
-AWS.config.update({region:'ca-central-1'});
+import * as dbLib from "../libs/database-lib";
+import * as dynamoLib from "../libs/dynamodb-lib";
 
-const db = new AWS.DynamoDB({endpoint: 'http://localhost:8000'});
+AWS.config.update({region:'ca-central-1'});
+var db = new AWS.DynamoDB({endpoint: 'http://localhost:8000'});
+
+var call = dynamoLib.call;
 
 const tableName = "pages";
 
@@ -13,10 +15,6 @@ function sleep(ms) {
   });
 }
 
-function call(action, params) {
-  const callDb = new AWS.DynamoDB.DocumentClient({endpoint: 'http://localhost:8000'});
-  return callDb[action](params).promise();
-}
 
 async function createTable() {
     var status = false;
@@ -69,7 +67,7 @@ describe('dblib', () => {
         );
 
         test("add item", async () => {
-                await dbLib.addItem(tableName, {userid: "USERID", pageid: "TEST-PAGE", data: "Test Data"}, call);
+                await dbLib.addItem(tableName, {userid: "USERID", pageid: "TEST-PAGE", data: "Test Data"});
                 const res = await call('query', 
                     {
                         TableName: tableName, 
@@ -86,7 +84,7 @@ describe('dblib', () => {
 
         test("remove item", async () => {
                 await call('put', {TableName: tableName, Item: {userid: "USERID", pageid: "TEST-PAGE2", data: "Test Data"}});
-                await dbLib.removeItem(tableName, {userid: "USERID", pageid: "TEST-PAGE2"}, call);
+                await dbLib.removeItem(tableName, {userid: "USERID", pageid: "TEST-PAGE2"});
                 const res = await call('query', 
                     {
                         TableName: tableName, 
@@ -101,7 +99,7 @@ describe('dblib', () => {
         test("edit item", async () => {
                 await call('put', {TableName: tableName, Item: {userid: "USERID", pageid: "TEST-PAGE3", data: "Test Data"}});
                 await dbLib.editItem(tableName, {userid: "USERID", pageid: "TEST-PAGE3"},
-                    {data: "New data"}, call);
+                    {data: "New data"});
                 const res = await call('query', 
                     {
                         TableName: tableName, 
@@ -118,7 +116,7 @@ describe('dblib', () => {
 
         test("retrieve item", async () => {
                 await call('put', {TableName: tableName, Item: {userid: "USERID", pageid: "TEST-PAGE4", data: "Test Data"}});
-                const res = await dbLib.retrieveItem(tableName, {userid: "USERID", pageid: "TEST-PAGE4"}, call);
+                const res = await dbLib.retrieveItem(tableName, {userid: "USERID", pageid: "TEST-PAGE4"});
                 expect(res.userid).toEqual('USERID');
                 expect(res.pageid).toEqual('TEST-PAGE4');
                 expect(res.data).toEqual('Test Data');
@@ -128,7 +126,7 @@ describe('dblib', () => {
         test("list items", async () => {
                 await call('put', {TableName: tableName, Item: {userid: "USERID2", pageid: "TEST-PAGE5", data: "Test Data 1"}});
                 await call('put', {TableName: tableName, Item: {userid: "USERID2", pageid: "TEST-PAGE6", data: "Test Data 2"}});
-                const res = await dbLib.listItems(tableName, {userid: "USERID2"}, call);
+                const res = await dbLib.listItems(tableName, {userid: "USERID2"});
 
                 expect(res.Count).toEqual(2);
                 expect(res.Items[0].userid).toEqual('USERID2');

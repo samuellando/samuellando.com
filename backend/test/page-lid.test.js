@@ -112,10 +112,41 @@ describe('pagelib', () => {
         );
 
         test("list public pages", async () => {
+                await dbLib.addItem(tableName, {userid: "USER-5", pageid: "PAGE-5", text: "Page Text", title: "Page Title"});
+                await dbLib.addItem(tableName, {userid: "PUBLIC", pageid: "PAGE-6", text: "Page Text 1", title: "Page Title 1"});
+                await dbLib.addItem(tableName, {userid: "PUBLIC", pageid: "PAGE-7", text: "Page Text 2", title: "Page Title 2"});
+
+                const res = await pageLib.listPublicPages();
+
+                expect(res.Count).toEqual(2);
+                expect(res.Items[0].userid).toEqual('PUBLIC');
+                expect(res.Items[0].title).toEqual('Page Title 1');
+                expect(res.Items[0].text).toEqual('Page Text 1');
+                expect(res.Items[0].pageid).toEqual('PAGE-6');
+                expect(res.Items[1].userid).toEqual('PUBLIC');
+                expect(res.Items[1].title).toEqual('Page Title 2');
+                expect(res.Items[1].text).toEqual('Page Text 2');
+                expect(res.Items[1].pageid).toEqual('PAGE-7');
             }
         );
 
         test("list pages", async () => {
+                await dbLib.addItem(tableName, {userid: "USER-7", pageid: "PAGE-8", text: "Page Text 1", title: "Page Title 1"});
+                await dbLib.addItem(tableName, {userid: "PUBLIC", pageid: "PAGE-9", text: "Page Text 3", title: "Page Title 3"});
+                await dbLib.addItem(tableName, {userid: "USER-7", pageid: "PAGE-10", text: "Page Text 2", title: "Page Title 2"});
+                await dbLib.addItem(tableName, {userid: "PUBLIC", pageid: "PAGE-11", text: "Page Text 4", title: "Page Title 4"});
+
+                const res = await pageLib.listPages("USER-7");
+
+                expect(res.Count).toEqual(2);
+                expect(res.Items[0].userid).toEqual('USER-7');
+                expect(res.Items[0].pageid).toEqual('PAGE-10');
+                expect(res.Items[0].title).toEqual('Page Title 2');
+                expect(res.Items[0].text).toEqual('Page Text 2');
+                expect(res.Items[1].userid).toEqual('USER-7');
+                expect(res.Items[1].pageid).toEqual('PAGE-8');
+                expect(res.Items[1].title).toEqual('Page Title 1');
+                expect(res.Items[1].text).toEqual('Page Text 1');
             }
         );
     }

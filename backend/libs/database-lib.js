@@ -91,30 +91,35 @@ export async function retrieveItem(table, key, call) {
     }
 }
 
-export async function listItems(table, key) {
+export async function listItems(table, key, call) {
     if (call === undefined) {
         call = dynamoDbLib.call;
     }
 
     var keyConditionExpression = "";
-    var expressionAttributeValues;
-    for (var i = 0; i < Object.keys(item); i++) {
-        updateExpression += " "+Object.keys(item)[i]+
-            " = :"+Object.keys(item)[i]+",";
+    var expressionAttributeValues = {};
+    var expressionAttributeNames = {};
+    for (var i = 0; i < Object.keys(key).length; i++) {
+        keyConditionExpression += " #"+Object.keys(key)[i]+
+            " = :"+Object.keys(key)[i]+",";
 
-        expressionAttributeValues[":"+Object.keys(item)] = 
-            item.Object.keys(item);
+        expressionAttributeValues[":"+Object.keys(key)[i]] = 
+            key[Object.keys(key)[i]];
+
+        expressionAttributeNames["#"+Object.keys(key)[i]] = 
+            Object.keys(key)[i];
     }
     const params = {
         TableName: table,
 
-        KeyConditionExpression: keyConditionExpression,
+        KeyConditionExpression: keyConditionExpression.substr(0, keyConditionExpression.length - 1),
         ExpressionAttributeValues: expressionAttributeValues,
+        ExpressionAttributeNames: expressionAttributeNames,
     };
 
     try {
         var result = await call("query", params);
-        return result.Items;
+        return result;
     } catch (e) {
         return false;
   }

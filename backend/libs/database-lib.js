@@ -74,6 +74,12 @@ export async function editItem(table, key, item, call) {
     }
 }
 
+/**
+ * @param {*} table 
+ * @param {*} key 
+ * @param {*} call 
+ * @returns a single item.
+ */
 export async function retrieveItem(table, key, call) {
     if (call === undefined) {
         call = dynamoDbLib.call;
@@ -91,6 +97,12 @@ export async function retrieveItem(table, key, call) {
     }
 }
 
+/**
+ * @param {*} table 
+ * @param {*} key 
+ * @param {*} call 
+ * @returns An object with Count int and Items array.
+ */
 export async function listItems(table, key, call) {
     if (call === undefined) {
         call = dynamoDbLib.call;

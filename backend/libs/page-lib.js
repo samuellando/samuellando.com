@@ -35,12 +35,6 @@ export function listPublicPages() {
 }
 
 export function listPages(userid) {
-    const auths = AuthLib.listAuthorizations(userid);
-    var items = [];
-    for (var auth in auths) {
-        items.push(retrievePage(auth.pageid));
-    }
-    items.push(...listPublicPages());
-    // REMOVE DUPLICATES.
-    return items;
+    // TODO get authorized pages too.
+    return DbLib.listItems(tableName, {userid: userid});
 }

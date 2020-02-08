@@ -74,7 +74,7 @@ export async function editItem(table, key, item, call) {
     }
 }
 
-export async function retrieveItem(table, key) {
+export async function retrieveItem(table, key, call) {
     if (call === undefined) {
         call = dynamoDbLib.call;
     }

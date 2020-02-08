@@ -6,9 +6,17 @@ import * as DbLib from "./database-lib";
 import * as AuthLib from "./authorization-lib";
 import uuid from "uuid";
 
-export function addPage(page) {
+var tableName = process.env.pageTableName || "pages";
+
+export function addPage(userid, title, text, isPrivate)  {
+    var page = {
+        userid: userid,
+        title: title,
+        text: text,
+        private: isPrivate,
+    }
     page.pageid = uuid.v1();
-    return DbLib.addItem(process.env.pageTableName, page);
+    return DbLib.addItem(tableName, page);
 }
 
 export function removePage(pageid) {

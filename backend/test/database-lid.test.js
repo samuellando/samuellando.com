@@ -84,7 +84,7 @@ describe('dblib', () => {
 
         test("remove item", async () => {
                 await call('put', {TableName: tableName, Item: {pageid: "TEST-PAGE2", data: "Test Data"}});
-                const err = await dbLib.removeItem(tableName, "pageid=:pageid", {":pageid": "TEST-PAGE2"}, call);
+                const err = await dbLib.removeItem(tableName, {pageid: "TEST-PAGE2"}, call);
                 const res = await call('query', 
                     {
                         TableName: tableName, 
@@ -92,9 +92,7 @@ describe('dblib', () => {
                         ExpressionAttributeValues: {":pageid": "TEST-PAGE2"}
                     }
                 );
-                console.log(res);
-                console.log(err);
-                //expect(res.Count).toEqual(0);
+                expect(res.Count).toEqual(0);
             }
         );
     }

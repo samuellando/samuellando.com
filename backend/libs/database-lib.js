@@ -6,7 +6,7 @@
 import * as dynamoDbLib from "./dynamodb-lib";
 
 export async function addItem(table, item, call) {
-    if (call === undefined) {
+    if (!call) {
         call = dynamoDbLib.call;
     }
 
@@ -22,19 +22,20 @@ export async function addItem(table, item, call) {
     }
 }
 
-export async function removeItem(table, key) {
-    if (call === undefined) {
+export async function removeItem(table, key, call) {
+    if (!call) {
         call = dynamoDbLib.call;
     }
 
     const params = {
         TableName: table,
-        Key: key,
+        Key: key
     };
     try {
         await call("delete", params);
         return true;
     } catch (e) {
+        console.log(e);
         return false;
     }
 }

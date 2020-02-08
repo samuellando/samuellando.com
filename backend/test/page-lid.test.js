@@ -65,7 +65,7 @@ describe('pagelib', () => {
         );
 
         test("add page", async () => {
-                const req = await pageLib.addPage("USER-1", "Test Title", "Test Text", true);
+                await pageLib.addPage("USER-1", "Test Title", "Test Text", true);
                 const res = await dbLib.listItems(tableName, {userid: "USER-1"});
 
                 expect(res.Count).toEqual(1);
@@ -77,6 +77,12 @@ describe('pagelib', () => {
         );
 
         test("remove page", async () => {
+                await dbLib.addItem(tableName, {userid: "USER-2", pageid: "PAGE-2", text: "Page Text", title: "Page Title", private: false});
+                await pageLib.removePage("USER-2", "PAGE-2");
+
+                const res = await dbLib.listItems(tableName, {userid: "USER-2"});
+
+                expect(res.Count).toEqual(0);
             }
         );
 

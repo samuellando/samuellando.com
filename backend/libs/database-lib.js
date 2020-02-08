@@ -40,25 +40,30 @@ export async function removeItem(table, key, call) {
     }
 }
 
-export async function editItem(table, key, item) {
+export async function editItem(table, key, item, call) {
     if (call === undefined) {
         call = dynamoDbLib.call;
     }
 
     var updateExpression = "SET";
-    var expressionAttributeValues;
-    for (var i = 0; i < Object.keys(item); i++) {
-        updateExpression += " "+Object.keys(item)[i]+
+    var expressionAttributeValues  = {};
+    var expressionAttributeNames = {};
+    for (var i = 0; i < Object.keys(item).length; i++) {
+        updateExpression += " #"+Object.keys(item)[i]+
             " = :"+Object.keys(item)[i]+",";
 
-        expressionAttributeValues[":"+Object.keys(item)] = 
-            item.Object.keys(item);
+        expressionAttributeValues[":"+Object.keys(item)[i]] = 
+            item[Object.keys(item)[i]];
+
+        expressionAttributeNames["#"+Object.keys(item)[i]] = 
+            Object.keys(item)[i];
     }
     const params = {
         TableName: table,
         Key: key,
-        UpdateExpression: updateExpression,
+        UpdateExpression: updateExpression.substr(0, updateExpression.length - 1),
         ExpressionAttributeValues: expressionAttributeValues,
+        ExpressionAttributeNames: expressionAttributeNames,
         ReturnValues: "ALL_NEW"
     };
     try {

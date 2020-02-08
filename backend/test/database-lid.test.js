@@ -112,5 +112,21 @@ describe('dblib', () => {
                 expect(res.Items[0].data).toEqual('New data');
             }
         );
+
+        test("retrieve item", async () => {
+                await call('put', {TableName: tableName, Item: {pageid: "TEST-PAGE4", data: "Test Data"}});
+                await dbLib.retrieveItem(tableName, {pageid: "TEST-PAGE4"}, call);
+                const res = await call('query', 
+                    {
+                        TableName: tableName, 
+                        KeyConditionExpression: "pageid=:pageid", 
+                        ExpressionAttributeValues: {":pageid": "TEST-PAGE4"}
+                    }
+                );
+                expect(res.Count).toEqual(1);
+                expect(res.Items[0].pageid).toEqual('TEST-PAGE4');
+                expect(res.Items[0].data).toEqual('Test Data');
+            }
+        );
     }
 );

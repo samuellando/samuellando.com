@@ -19,8 +19,8 @@ export function addPage(userid, title, text, isPrivate)  {
     return DbLib.addItem(tableName, page);
 }
 
-export function removePage(pageid) {
-    return DbLib.removeItem(process.env.pageTableName, {"pageid": pageid});
+export function removePage(userid, pageid) {
+    return DbLib.removeItem(tableName, {userid: userid, pageid: pageid});
 }
 
 export function editPage(pageid, page) {

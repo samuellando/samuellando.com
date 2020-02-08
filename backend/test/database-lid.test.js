@@ -126,15 +126,16 @@ describe('dblib', () => {
         );
 
         test("list items", async () => {
-                await call('put', {TableName: tableName, Item: {userid: "USERID", pageid: "TEST-PAGE5", data: "Test Data 1"}});
-                await call('put', {TableName: tableName, Item: {userid: "USERID", pageid: "TEST-PAGE5", data: "Test Data 2"}});
-                const res = await dbLib.listItems(tableName, {userid: "USERID"}, call);
+                await call('put', {TableName: tableName, Item: {userid: "USERID2", pageid: "TEST-PAGE5", data: "Test Data 1"}});
+                await call('put', {TableName: tableName, Item: {userid: "USERID2", pageid: "TEST-PAGE6", data: "Test Data 2"}});
+                const res = await dbLib.listItems(tableName, {userid: "USERID2"}, call);
+
                 expect(res.Count).toEqual(2);
-                expect(res.Items[0].userid).toEqual('USERID');
+                expect(res.Items[0].userid).toEqual('USERID2');
                 expect(res.Items[0].pageid).toEqual('TEST-PAGE5');
                 expect(res.Items[0].data).toEqual('Test Data 1');
-                expect(res.Items[1].userid).toEqual('USERID');
-                expect(res.Items[1].pageid).toEqual('TEST-PAGE5');
+                expect(res.Items[1].userid).toEqual('USERID2');
+                expect(res.Items[1].pageid).toEqual('TEST-PAGE6');
                 expect(res.Items[1].data).toEqual('Test Data 2');
             }
         );

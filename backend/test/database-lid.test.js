@@ -7,7 +7,7 @@ var db = new AWS.DynamoDB({endpoint: 'http://localhost:8000'});
 
 var call = dynamoLib.call;
 
-const tableName = "pages";
+const tableName = "test-pages";
 
 function sleep(ms) {
   return new Promise((resolve) => {

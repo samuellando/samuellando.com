@@ -3,22 +3,38 @@
  */
 
 import * as DbLib from "./database-lib";
+import * as PageLib from "./page-lib";
 
-export function addAuthorization(authorization) {
-    return DbLib.addItem(process.env.authorizationTableName, authorization);
+var tableName = process.env.authTableName || "authorizations";
+
+export function addAuthorization(userid, pageid, level) {
+    var auth = {
+        userid: userid,
+        pageid: pageid,
+        level: level,
+    };
+    return DbLib.addItem(tableName, auth);
 }
 
 export function removeAuthorization(userid, pageid) {
-    return DbLib.removeItem(process.env.authorizationTableName, 
-        {"userid": userid, "pageid": pageid});
+    var auth = {
+        userid: userid, 
+        pageid: pageid
+    };
+    return DbLib.removeItem(tableName, auth);
 }
 
 export function retrieveAuthorization(userid, pageid) {
-    return DbLib.addItem(process.env.authorizationTableName,
-        {"userid": userid, "pageid": pageid});
+    var auth = {
+        userid: userid, 
+        pageid: pageid
+    };
+    return DbLib.retrieveItem(tableName, auth);
 }
 
 export function listAuthorizations(userid) {
-    return DbLib.listItems(process.env.authorizationTableName,
-        {"userid": userid});
+    var auth = {
+        userid: userid, 
+    };
+    return DbLib.listItems(tableName, auth);
 }

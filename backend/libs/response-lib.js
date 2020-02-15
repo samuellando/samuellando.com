@@ -1,6 +1,6 @@
 /**
  * This library provides response functions for the handlers.
- * @param {*} body 
+ * @param {*} body
  */
 
 export function success(body) {

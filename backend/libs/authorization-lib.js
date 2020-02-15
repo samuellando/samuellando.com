@@ -3,7 +3,7 @@
  */
 
 import * as DbLib from "./database-lib";
-import * as PageLib from "./page-lib";
+//import * as PageLib from "./page-lib";
 
 var tableName = process.env.authTableName || "authorizations";
 
@@ -18,7 +18,7 @@ export function addAuthorization(userid, pageid, level) {
 
 export function removeAuthorization(userid, pageid) {
     var auth = {
-        userid: userid, 
+        userid: userid,
         pageid: pageid
     };
     return DbLib.removeItem(tableName, auth);
@@ -26,7 +26,7 @@ export function removeAuthorization(userid, pageid) {
 
 export function retrieveAuthorization(userid, pageid) {
     var auth = {
-        userid: userid, 
+        userid: userid,
         pageid: pageid
     };
     return DbLib.retrieveItem(tableName, auth);
@@ -34,7 +34,7 @@ export function retrieveAuthorization(userid, pageid) {
 
 export function listAuthorizations(userid) {
     var auth = {
-        userid: userid, 
+        userid: userid,
     };
     return DbLib.listItems(tableName, auth);
 }

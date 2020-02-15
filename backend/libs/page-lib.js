@@ -3,7 +3,7 @@
  */
 
 import * as DbLib from "./database-lib";
-import * as AuthLib from "./authorization-lib";
+//import * as AuthLib from "./authorization-lib";
 import uuid from "uuid";
 
 var tableName = process.env.pageTableName || "pages";
@@ -13,7 +13,7 @@ export function addPage(userid, title, text)  {
         userid: userid,
         title: title,
         text: text,
-    }
+    };
     page.pageid = uuid.v1();
     return DbLib.addItem(tableName, page);
 }

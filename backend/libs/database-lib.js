@@ -1,5 +1,5 @@
 /**
- * This library provides an API to the authorization and page libraries 
+ * This library provides an API to the authorization and page libraries
  * for the underlying database.
  */
 
@@ -39,10 +39,10 @@ export async function editItem(table, key, item) {
         updateExpression += " #"+Object.keys(item)[i]+
             " = :"+Object.keys(item)[i]+",";
 
-        expressionAttributeValues[":"+Object.keys(item)[i]] = 
+        expressionAttributeValues[":"+Object.keys(item)[i]] =
             item[Object.keys(item)[i]];
 
-        expressionAttributeNames["#"+Object.keys(item)[i]] = 
+        expressionAttributeNames["#"+Object.keys(item)[i]] =
             Object.keys(item)[i];
     }
     const params = {
@@ -62,9 +62,9 @@ export async function editItem(table, key, item) {
 }
 
 /**
- * @param {*} table 
- * @param {*} key 
- * @param {*} call 
+ * @param {*} table
+ * @param {*} key
+ * @param {*} call
  * @returns a single item.
  */
 export async function retrieveItem(table, key) {
@@ -81,9 +81,9 @@ export async function retrieveItem(table, key) {
 }
 
 /**
- * @param {*} table 
- * @param {*} key 
- * @param {*} call 
+ * @param {*} table
+ * @param {*} key
+ * @param {*} call
  * @returns An object with Count int and Items array.
  */
 export async function listItems(table, key) {
@@ -94,10 +94,10 @@ export async function listItems(table, key) {
         keyConditionExpression += " #"+Object.keys(key)[i]+
             " = :"+Object.keys(key)[i]+",";
 
-        expressionAttributeValues[":"+Object.keys(key)[i]] = 
+        expressionAttributeValues[":"+Object.keys(key)[i]] =
             key[Object.keys(key)[i]];
 
-        expressionAttributeNames["#"+Object.keys(key)[i]] = 
+        expressionAttributeNames["#"+Object.keys(key)[i]] =
             Object.keys(key)[i];
     }
     const params = {

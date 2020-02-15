@@ -15,7 +15,11 @@ export function addPage(userid, title, text)  {
         text: text,
     };
     page.pageid = uuid.v1();
-    return DbLib.addItem(tableName, page);
+    if (DbLib.addItem(tableName, page)) {
+        return page.pageid;
+    } else {
+        return false;
+    }
 }
 
 export function removePage(userid, pageid) {

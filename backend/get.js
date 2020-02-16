@@ -1,28 +1,18 @@
-import * as dynamoDbLib from "./libs/dynamodb-lib";
-import * as authorizationLib from "./libs/authorization-lib";
+import * as PageLib from "./libs/page-lib";
+import * as AuthLib from "./libs/authorization-lib";
+
 import { success, failure } from "./libs/response-lib";
 
 export async function main(event, context) {
-  const params = {
-    TableName: process.env.tableName,
+  const userid = event.requestContext.identity.cognitoIdentityId;
+  const pageid = event.pathParameters.id;
 
-    Key: {
-      pageid: event.pathParameters.id
+  const auth = await AuthLib.retrieveAuthorization(userid, pageid);
+  if (auth.level >= 0) {
+    const res = await PageLib.retrievePage(userid, pageid);
+    if (res) {
+      return success(res);
     }
-  };
-
-  try {
-    const result = await dynamoDbLib.call("get", params);
-    if (result.Item.private || !authorizationLib.get(event)) {
-      return false;
-    }
-    if (result.Item) {
-      // Return the retrieved item
-      return success(result.Item);
-    } else {
-      return failure({ status: false, error: "Item not found." });
-    }
-  } catch (e) {
-    return failure({ status: false });
   }
+  return failure({status: "Failed to find page."});
 }

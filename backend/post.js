@@ -7,7 +7,13 @@ export async function main(event, context) {
   const data = JSON.parse(event.body);
   const userid = event.requestContext.identity.cognitoIdentityId;
 
-  const pageid = await PageLib.addPage(userid, data.title, data.text);
+  var pUserid = userid;
+
+  if (data.public) {
+    pUserid = "PUBLIC";
+  }
+
+  const pageid = await PageLib.addPage(pUserid, data.title, data.text);
   if (pageid) {
     const res = await AuthLib.addAuthorization(userid, pageid, 0);
     if (res) {

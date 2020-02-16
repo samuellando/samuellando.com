@@ -7,7 +7,6 @@ export async function main(event, context) {
   const data = JSON.parse(event.body);
   const userid = event.requestContext.identity.cognitoIdentityId;
   const pageid = event.pathParameters.id;
-  console.log(pageid);
 
   const auth = await AuthLib.retrieveAuthorization(userid, pageid);
   if (auth.level <= 1) {

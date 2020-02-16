@@ -36,14 +36,16 @@ export async function editItem(table, key, item) {
     var expressionAttributeValues  = {};
     var expressionAttributeNames = {};
     for (var i = 0; i < Object.keys(item).length; i++) {
-        updateExpression += " #"+Object.keys(item)[i]+
-            " = :"+Object.keys(item)[i]+",";
+        if (item[Object.keys(item)[i]] != undefined && item[Object.keys(item)[i]] != null) {
+            updateExpression += " #"+Object.keys(item)[i]+
+                " = :"+Object.keys(item)[i]+",";
 
-        expressionAttributeValues[":"+Object.keys(item)[i]] =
-            item[Object.keys(item)[i]];
+            expressionAttributeValues[":"+Object.keys(item)[i]] =
+                item[Object.keys(item)[i]];
 
-        expressionAttributeNames["#"+Object.keys(item)[i]] =
-            Object.keys(item)[i];
+            expressionAttributeNames["#"+Object.keys(item)[i]] =
+                Object.keys(item)[i];
+        }
     }
     const params = {
         TableName: table,

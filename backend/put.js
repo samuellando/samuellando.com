@@ -1,31 +1,20 @@
-import * as dynamoDbLib from "./libs/dynamodb-lib";
-import * as authorizationLib from "./libs/authorization-lib";
-import { success, failure } from "./libs/response-lib";
+import * as PageLib from "./libs/page-lib";
+import * as AuthLib from "./libs/authorization-lib";
 
+import { success, failure } from "./libs/response-lib";
 
 export async function main(event, context) {
   const data = JSON.parse(event.body);
-  const params = {
-    TableName: process.env.tableName,
-    Key: {
-      pageid: event.pathParameters.id
-    },
-    UpdateExpression: "SET content = :content, title = :title, private = :private",
-    ExpressionAttributeValues: {
-      ":content": data.content || null,
-      ":title": data.title || null,
-      ":private": data.private || null,
-    },
-    ReturnValues: "ALL_NEW"
-  };
+  const userid = event.requestContext.identity.cognitoIdentityId;
+  const pageid = event.pathParameters.id;
+  console.log(pageid);
 
-  try {
-    if (authorizationLib.get(event) != 0) {
-      return failure({ status: false });
+  const auth = await AuthLib.retrieveAuthorization(userid, pageid);
+  if (auth.level <= 1) {
+    const res = await PageLib.editPage(userid, pageid, data.title, data.text);
+    if (res) {
+      return success({status: "Page edited."});
     }
-    await dynamoDbLib.call("update", params);
-    return success({ status: true });
-  } catch (e) {
-    return failure({ status: false });
   }
+  return failure({status: "Failed to edit page."});
 }

@@ -47,7 +47,7 @@ functions:
     handler: post.main
     events:
       - http:
-          path: pages
+          path: page
           method: post
           cors: true
           authorizer: aws_iam
@@ -56,7 +56,7 @@ functions:
       handler: get.main
       events:
         - http:
-            path: pages/{id}
+            path: page/{id}
             method: get
             cors: true
             authorizer: aws_iam
@@ -65,7 +65,7 @@ functions:
     handler: put.main
     events:
       - http:
-          path: pages/{id}
+          path: page/{id}
           method: put
           cors: true
           authorizer: aws_iam
@@ -83,7 +83,7 @@ functions:
     handler: delete.main
     events:
       - http:
-        path: pages/{id}
-        method: delete
-        cors: true
-        authorizer: aws_iam
+          path: page/{id}
+          method: delete 
+          cors: true
+          authorizer: aws_iam

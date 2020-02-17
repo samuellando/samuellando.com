@@ -70,24 +70,6 @@ functions:
           cors: true
           authorizer: aws_iam
 
-  authorize:
-    handler: authorize.main
-    events:
-      - http:
-          path: authorize/pages/{id}
-          method: post
-          cors: true
-          authorizer: aws_iam
-
-  unauthorize:
-    handler: unauthorize.main
-    events:
-      - http:
-          path: unauthorize/pages/{id}
-          method: delete
-          cors: true
-          authorizer: aws_iam
-
   list:
     handler: list.main
     events:

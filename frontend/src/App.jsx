@@ -4,6 +4,7 @@ import Navigation from "./Navigation";
 import Signature from "./Signature";
 import Sky from './Sky';
 import System from './System';
+import Login from './Login';
 
 import './css/App.css';
 
@@ -13,6 +14,9 @@ export default class App extends React.Component {
     this.state = {
       mode: "home"
     }
+
+    this.loadLogIn = this.loadLogIn.bind(this); 
+    this.loadPageMenu = this.loadPageMenu.bind(this);
   }
 
   loadHome() {
@@ -20,7 +24,13 @@ export default class App extends React.Component {
   }
 
   loadPageMenu() {
+    console.log(this);
     this.setState({mode: "pageMenu"});
+  }
+  
+  loadLogIn() {
+    console.log("OK");
+    this.setState({mode: "logIn"});
   }
 
   render() {
@@ -35,6 +45,8 @@ export default class App extends React.Component {
       </div>;
     } else if (this.state.mode === "pageMenu") {
       out = <h1>PageMenu</h1>;
+    } else if (this.state.mode === "logIn") {
+      out = <Login />;
     }
     return (out);
   }

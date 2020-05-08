@@ -1,8 +1,0 @@
-{
-    "body": "{\"title\":\"hello world\", \"text\":\"Test tex\", \"public\": true}",
-    "requestContext": {
-      "identity": {
-        "cognitoIdentityId": "USER-SUB-1234"
-      }
-    }
-  }

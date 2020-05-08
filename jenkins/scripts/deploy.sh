@@ -1,7 +1,7 @@
 productiondir=/var/www
 productionname=samuellando.com
 builddir=build
-productionip=touformation.com
+productionip=samuellando.com
 
 echo "Creating build tarball"
 tar cf build.tar build/*

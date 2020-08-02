@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <Sky :stars="500" />
-    <Heading msg="Samuel Lando" />
+    <Heading text="Samuel Lando" />
     <System :planets="3" />
     <Links/>
     <Signature msg="Made with love by Sam"/>

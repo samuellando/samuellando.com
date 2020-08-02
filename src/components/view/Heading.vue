@@ -1,17 +1,8 @@
 <template>
   <div class="heading">
-    <h1>{{ msg }}</h1>
+    <h1>{{ text }}</h1>
   </div>
 </template>
 
-<script>
-export default {
-  name: 'heading',
-  props: {
-    msg: String
-  }
-}
-</script>
-
-<style scoped>
-</style>
+<script src="@/components/viewmodel/Heading.js"></script>
+<style scoped src="@/components/view/stylesheets/Heading.css"></style>

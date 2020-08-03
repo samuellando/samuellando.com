@@ -1,0 +1,10 @@
+.signature {
+    position: fixed;
+    margin: 0;
+    padding: 2px;
+    bottom: 0;
+    right: 0;
+    width: 100vw;
+    background-color: #001a4d;
+    color: white;
+}

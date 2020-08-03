@@ -1,16 +1,6 @@
 <template>
-<p>signature</p>
+  <p class="signature">{{ text }}</p>
 </template>
 
-<script>
-export default {
-  name: 'signature',
-  props: {
-    msg: String
-  }
-}
-</script>
-
-<!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped>
-</style>
+<script src="@/components/viewmodel/Signature.js"></script>
+<style scoped src="@/components/view/stylesheets/Signature.css"></style>

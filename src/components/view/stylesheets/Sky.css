@@ -1,6 +1,6 @@
 .sky {
     background-color: black;
-    z-index: -1;
+    z-index: -1000000;
     position: absolute;
     overflow: hidden;
     height: 100vh;

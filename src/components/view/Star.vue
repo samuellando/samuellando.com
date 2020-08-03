@@ -4,4 +4,4 @@
 </template>
 
 <script src="@/components/viewmodel/Star.js"></script>
-<style scoped src="@/components/view/stylesheets/Star.css"></style
+<style scoped src="@/components/view/stylesheets/Star.css"></style>

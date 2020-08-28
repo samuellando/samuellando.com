@@ -3,6 +3,11 @@ body {
   padding: 0;
 }
 
+body::-webkit-scrollbar {
+  display: none;
+}
+
+
 #app {
     font-family: Avenir, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -16,4 +21,10 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+}
+
+.homeContainer .heading {
+  position: absolute;
+  top: 18vh;
+  width: 100vw;
 }

@@ -2,11 +2,6 @@
     font-size: 45px;
     color: white;
     text-shadow: 4px 4px #ff0000;
-
-    position: absolute;
-    top: 18vh;
-    left: 0;
-    width: 100vw;
 }
 
 .heading h1 {

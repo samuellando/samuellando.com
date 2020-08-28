@@ -1,6 +1,9 @@
 <template>
   <div class="contact">
     <Heading text="Contact" />
+    <p>
+      email: samuel.lando@aol.com
+    </p>
   </div>
 </template>
 

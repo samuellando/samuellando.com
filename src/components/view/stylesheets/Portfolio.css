@@ -1,0 +1,13 @@
+.portfolio {
+    background-color: green;
+}
+
+@media only screen and (min-width: 768px) {
+    .portfolio {
+        position: relative;
+        top: -50vh;
+        right: -50vw;
+        width: 50vw;
+        height: 100vh;;
+    }
+}

@@ -1,6 +1,8 @@
 <template>
   <div class="information">
-    information
+    <Resume/>
+    <Portfolio/>
+    <Contact/>
   </div>
 </template>
 

@@ -1,0 +1,13 @@
+.resume {
+    background-color: blue;
+}
+
+@media only screen and (min-width: 768px) {
+    .resume {
+        position: relative;
+        top: 0;
+        left: 0;
+        width: 50vw;
+        height: 50vh;;
+    }
+}

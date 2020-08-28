@@ -1,17 +1,13 @@
-import Sky from '@/components/view/Sky.vue'
-import Heading from '@/components/view/Heading.vue'
-import System from '@/components/view/System.vue'
-import Links from '@/components/view/Links.vue'
-import Signature from '@/components/view/Signature.vue'
+import Resume from '@/components/view/Resume.vue'
+import Portfolio from '@/components/view/Portfolio.vue'
+import Contact from '@/components/view/Contact.vue'
 
 export default {
   name: 'Information',
 
   components: {
-    Sky,
-    Heading,
-    System,
-    Links,
-    Signature
+    Resume,
+    Portfolio,
+    Contact,
   }
 }

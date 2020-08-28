@@ -1,4 +1,14 @@
-.resume {
+.resume ul {
+    list-style-type: none;
+    padding: 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.resume ul li {
+    margin-left: 20px;
+    float: left
 }
 
 @media only screen and (min-width: 768px) {

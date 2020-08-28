@@ -3,17 +3,15 @@ import Heading from '@/components/view/Heading.vue'
 import System from '@/components/view/System.vue'
 import Links from '@/components/view/Links.vue'
 import Signature from '@/components/view/Signature.vue'
-import Information from '@/components/view/Information.vue'
 
 export default {
-  name: 'App',
+  name: 'Information',
 
   components: {
     Sky,
     Heading,
     System,
     Links,
-    Signature,
-    Information
+    Signature
   }
 }

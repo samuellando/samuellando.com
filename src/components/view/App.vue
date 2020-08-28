@@ -7,6 +7,7 @@
       <Links/>
       <Signature text="Made with ♥ by Sam"/>
     </div>
+    <Information/>
   </div>
 </template>
 

@@ -17,6 +17,7 @@
     :longitudeOfAscendingNode="0"
     :argumentOfPeriapsis="0"
     :trueAnomaly="0"
+    :mobile="true"
   />
   <Body
     :radius="75"
@@ -35,6 +36,7 @@
     :longitudeOfAscendingNode="0"
     :argumentOfPeriapsis="0"
     :trueAnomaly="0"
+    :mobile="true"
   />
   <Body
     :radius="100"
@@ -53,6 +55,7 @@
     :longitudeOfAscendingNode="0.75"
     :argumentOfPeriapsis="0.75"
     :trueAnomaly="0"
+    :mobile="false"
   />
   <Body
     :radius="100"
@@ -71,6 +74,7 @@
     :longitudeOfAscendingNode="2.25"
     :argumentOfPeriapsis="0.75"
     :trueAnomaly="0"
+    :mobile="false"
   />
 </div>
 </template>

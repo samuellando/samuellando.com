@@ -1,5 +1,5 @@
 <template>
-  <div class="information">
+  <div class="information" id="info">
     <Resume/>
     <Portfolio/>
     <Contact/>

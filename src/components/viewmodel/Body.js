@@ -21,6 +21,7 @@ export default {
         longitudeOfAscendingNode: Number,
         argumentOfPeriapsis: Number,
         trueAnomaly: Number,
+        mobile: Boolean,
     },
 
     data() {
@@ -43,6 +44,7 @@ export default {
                 longitudeOfAscendingNode: this.longitudeOfAscendingNode,
                 argumentOfPeriapsis: this.argumentOfPeriapsis,
                 trueAnomaly: this.trueAnomaly,
+                mobile: this.mobile
             },
             TICK_RATE: 1,
             ticker: null,
@@ -56,9 +58,17 @@ export default {
         this.startTick();
     },
 
+   
+
     methods: {
+        isMobile() {
+            return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+        },
         startTick() {
-            this.ticker = setInterval(this.tick, this.TICK_RATE);
+            console.log(this.props.mobile);
+            if (this.props.mobile || !this.isMobile()) {
+                this.ticker = setInterval(this.tick, this.TICK_RATE);
+            }
         },
         tick() {
             this.model.tick();

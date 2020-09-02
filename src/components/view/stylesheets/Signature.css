@@ -7,4 +7,5 @@
     width: 100vw;
     background-color: #001a4d;
     color: white;
+    z-index: 1000;
 }

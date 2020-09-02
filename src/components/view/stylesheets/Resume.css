@@ -1,0 +1,22 @@
+.resume ul {
+    list-style-type: none;
+    padding: 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.resume ul li {
+    margin-left: 20px;
+    float: left
+}
+
+@media only screen and (min-width: 768px) {
+    .resume {
+        position: relative;
+        top: 0;
+        left: 0;
+        width: 50vw;
+        height: 50vh;;
+    }
+}

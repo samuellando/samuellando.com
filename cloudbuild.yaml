@@ -3,8 +3,8 @@ steps:
     entrypoint: npm
     args: ['install']
   - name: node
-    entrypoint: npm
-    args: ['run build']
+    entrypoint: npx
+    args: ['npx vue-cli-service build']
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: bash
     args: ['app', 'deploy']

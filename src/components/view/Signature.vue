@@ -1,5 +1,5 @@
 <template>
-  <p class="signature">{{ text }}</p>
+  <p class="fixed-bottom signature m-0">{{ text }}</p>
 </template>
 
 <script src="@/components/viewmodel/Signature.js"></script>

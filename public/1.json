@@ -1,0 +1,6 @@
+{ 
+  "title": "Test Post", 
+  "description": "This is a test post", 
+  "listed": true,
+  "image": "/1.jpg"
+}

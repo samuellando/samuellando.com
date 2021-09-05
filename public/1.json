@@ -1,6 +1,6 @@
 { 
-  "title": "Test Post", 
-  "description": "This is a test post", 
+  "title": "New Blog", 
+  "description": "A quick overview of what is to come.", 
   "listed": true,
   "image": "/1.jpg"
 }

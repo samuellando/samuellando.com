@@ -1,8 +1,8 @@
 [
   {
     "id": 1,
-    "title": "test post",
-    "description": "This is a test post",
-    "image": "/1.jpg",
+    "title": "New Blog",
+    "description": "A quick overview of what is to come.",
+    "image": "/1.jpg"
   }
 ]

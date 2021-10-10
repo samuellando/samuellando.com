@@ -10,5 +10,11 @@
     "title": "Stationary Interests",
     "description": "A quick overview of my interest in stationary.",
     "image": "/2.jpg"
+  }, 
+  {
+    "id": 3,
+    "title": "Coffee Interests",
+    "description": "A quick overview of my interest in coffee.",
+    "image": "/3.jpg"
   }
 ]

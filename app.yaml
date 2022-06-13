@@ -6,16 +6,6 @@ handlers:
   upload: dist/index.html
   secure: always
 
-- url: /blog
-  static_files: dist/index.html
-  upload: dist/index.html
-  secure: always
-
-- url: /blog/(.*)
-  static_files: dist/index.html
-  upload: dist/index.html
-  secure: always
-
 - url: /(.*)
   static_files: dist/\1
   upload: dist/(.*)

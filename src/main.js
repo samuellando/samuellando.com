@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import App from './components/view/App.vue'
-import Blog from './components/view/Blog.vue'
 import { BootstrapVue } from 'bootstrap-vue'
 
 // Import Bootstrap an BootstrapVue CSS files (order is important)
@@ -14,7 +13,6 @@ Vue.config.productionTip = false
 
 const routes = {
   '/': App,
-  '/blog': Blog
 }
 
 new Vue({

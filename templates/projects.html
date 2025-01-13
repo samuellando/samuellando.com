@@ -1,0 +1,17 @@
+{{block "projects" .}}
+<html>
+    {{template "head" .}}
+    <body>
+        {{template "title" .}}
+        {{template "nav" .}}
+        <ul>
+        {{range .Handler.ProjectStore.Projects}}
+        <li>
+            <b><a href="{{.Url}}">{{.Title}}</b></a><br/>
+            {{.Description}}<br/>
+        </li>
+        {{end}}
+        </ul>
+    </body>
+</html>
+{{end}}

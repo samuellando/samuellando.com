@@ -1,0 +1,16 @@
+{{block "writing" .}}
+    {{template "head" .}}
+        {{template "title" .}}
+        {{template "nav" .}}
+        {{template "admin" .}}
+        {{if eq .Document nil}}
+            <ul>
+            {{range .Handler.MarkdownStore.GetDocumentsByTag "writing"}}
+            <li><a href="/writing/{{.Id}}">{{.Title}}</a></li>
+            {{end}}
+            </ul>
+        {{else}}
+        {{template "document" .Document}}
+        {{end}}
+    {{template "foot" .}}
+{{end}}

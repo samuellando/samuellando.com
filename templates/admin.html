@@ -1,0 +1,23 @@
+{{block "admin" .}}
+<div>
+        {{if ne .Document nil}}
+        <hr/>
+        <h2>Admin</h2>
+        <form hx-put="/{{.Page}}/{{.Document.Id}}" hx-target="#document" hx-push-url="true">
+            <label>Title </label>
+            <input name="title" type="text" value="{{.Document.Title}}"/><br/>
+            <label>Content </label>
+            <input name="content" type="text" value="{{.Document.Content}}"/><br/>
+            <label>Tags </label>
+            <input name="tags" type="text" value='{{join .Document.Tags ","}}'/><br/>
+            <label>Published </label>
+            <input name="published" type="checkbox" value="true" {{if .Document.Published}}checked{{end}}/><br/>
+            <button type="submit">Update</button>
+        </form>
+        <button hx-delete="/{{.Page}}/{{.Document.Id}}" hx-target="body" hx-push-url="true">
+            Delete this Document
+        </button>
+        <hr/>
+        {{end}}
+</div>
+{{end}}

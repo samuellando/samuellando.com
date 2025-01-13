@@ -1,0 +1,15 @@
+{{block "create" .}}
+    {{template "head" .}}
+        {{template "title" .}}
+        {{template "nav" .}}
+        <form hx-post="/{{.Page}}" hx-target="body" hx-push-url="true">
+            <label>Title </label>
+            <input name="title" type="text" value=""/><br/>
+            <label>Content </label>
+            <input name="content" type="text" value=""/><br/>
+            <label>Tags </label>
+            <input name="tags" type="text" value=''/><br/>
+            <button type="submit">Update</button>
+        </form>
+    {{template "foot" .}}
+{{end}}

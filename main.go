@@ -118,7 +118,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		// And return the updated document
-		err = h.templates.ExecuteTemplate(w, "document", context)
+		err = h.templates.ExecuteTemplate(w, "document", document)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)

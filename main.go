@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"io"
 	"strconv"
+    "bufio"
 
 	"log"
 	"net/http"
@@ -92,12 +94,38 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/"+page, 303)
 		return
 	case "PUT":
-		err := document.SetTitle(req.PostFormValue("title"))
-		if err != nil {
-			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
-			return
+        max_file_size := int64(2000000)
+        if f, header, err := req.FormFile("file"); err == nil {
+            defer f.Close()
+            if header.Size > max_file_size {
+				http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(400), "File too large (2MB max)"), 400)
+                return
+            }
+            buff := make([]byte, header.Size)
+            for {
+                r := bufio.NewReader(f)
+                _, err = r.Read(buff)
+                if err != nil && err != io.EOF {
+                    panic(err)
+                }
+                if err != io.EOF {
+                    break
+                }
+            }
+			err = document.SetContent(string(buff))
+            w.Header().Add("HX-Refresh", "true")
+			if err != nil {
+				http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
+				return
+			}
+		} else {
+			err = document.SetContent(req.PostFormValue("content"))
+			if err != nil {
+				http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
+				return
+			}
 		}
-		err = document.SetContent(req.PostFormValue("content"))
+		err := document.SetTitle(req.PostFormValue("title"))
 		if err != nil {
 			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
 			return

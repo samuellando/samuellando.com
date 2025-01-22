@@ -1,4 +1,5 @@
 {{block "create" .}}
+    {{if .Admin}}
     {{template "head" .}}
         {{template "title" .}}
         {{template "nav" .}}
@@ -12,4 +13,5 @@
             <button type="submit">Update</button>
         </form>
     {{template "foot" .}}
+    {{end}}
 {{end}}

@@ -2,7 +2,7 @@
     {{template "head" .}}
         {{template "title" .}}
         {{template "nav" .}}
-        {{template "admin" .}}
+        {{template "edit" .}}
         {{if eq .Document nil}}
             <ul>
             {{range .Handler.MarkdownStore.GetDocumentsByTag "writing"}}

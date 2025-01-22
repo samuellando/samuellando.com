@@ -1,25 +1,19 @@
 {{block "admin" .}}
-<div>
-        {{if ne .Document nil}}
-        <hr/>
-        <h2>Admin</h2>
-        <form hx-encoding='multipart/form-data' hx-put="/{{.Page}}/{{.Document.Id}}" hx-target="#document" hx-push-url="true">
-            <label>Title </label>
-            <input name="title" type="text" value="{{.Document.Title}}"/><br/>
-            <label>Content </label><br/>
-            <textarea rows="30" cols="100" name="content">{{.Document.Content}}</textarea><br/>
-            <label>File </label>
-            <input name="file" type="file"/><br/>
-            <label>Tags </label>
-            <input name="tags" type="text" value='{{join .Document.Tags ","}}'/><br/>
-            <label>Published </label>
-            <input name="published" type="checkbox" value="true" {{if .Document.Published}}checked{{end}}/><br/>
-            <button type="submit">Update</button>
+    {{template "head" .}}
+        {{template "title" .}}
+        {{template "nav" .}}
+        {{if .Admin}}
+        <form hx-post="/deauth" hx-push-url="true" hx-target="body">
+            <button type="submit">Log Out</button>
         </form>
-        <button hx-delete="/{{.Page}}/{{.Document.Id}}" hx-target="body" hx-push-url="true">
-            Delete this Document
-        </button>
-        <hr/>
+        {{else}}
+        <form hx-post="/auth" hx-target="body" hx-push-url="true">
+            <label>User </label>
+            <input name="user" type="text"/><br/>
+            <label>Password </label>
+            <input name="password" type="password"/><br/>
+            <button type="submit">Log In</button>
+        </form>
         {{end}}
-</div>
+    {{template "foot" .}}
 {{end}}

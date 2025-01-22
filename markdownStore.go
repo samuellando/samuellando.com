@@ -3,9 +3,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"strconv"
 	"time"
-    "os"
 
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"

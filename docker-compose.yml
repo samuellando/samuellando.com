@@ -4,26 +4,17 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: development.dockerfile
     ports:
       - "8080:8080"
     depends_on:
       - db
-    environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=docker
-      - DB_NAME=postgres
+    env_file: ".env"
     develop:
       watch:
-        - action: rebuild
-          path: .
-          ignore: 
-          - templates
         - action: sync+restart
-          path: templates
-          target: /app/templates
+          path: .
+          target: /app
 
   db:
     image: postgres

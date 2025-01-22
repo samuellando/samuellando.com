@@ -1,8 +1,9 @@
 {{block "all" .}}
+    {{if .Admin}}
     {{template "head" .}}
         {{template "title" .}}
         {{template "nav" .}}
-        {{template "admin" .}}
+        {{template "edit" .}}
         {{if eq .Document nil}}
         <h2>Live Posts</h2>
             <ul>
@@ -20,4 +21,5 @@
         {{template "document" .Document}}
         {{end}}
     {{template "foot" .}}
+    {{end}}
 {{end}}

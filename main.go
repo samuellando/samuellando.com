@@ -1,14 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"html/template"
 	"io"
-	"strconv"
-    "bufio"
-
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -24,6 +23,7 @@ type context struct {
 	Request  *http.Request
 	Page     string
 	Document Document
+	Admin    bool
 }
 
 func createHandler(templateDir, assetsDir, assetsPrefix string) *handler {
@@ -41,11 +41,45 @@ func (h *handler) RenderMarkdown(page string) template.HTML {
 	return template.HTML("<h1>Hello!</h1><p>My name is sam</p>" + "PAGE=" + page)
 }
 
+func isAuthenticated(req *http.Request) bool {
+	if cookie, err := req.Cookie("session"); err == nil && validJWT(cookie.Value) {
+		return true
+	} else {
+		return false
+	}
+}
+
 func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	method := req.Method
 	path := req.URL.Path
-	if strings.HasPrefix(path, "/assets") && req.Method == "GET" {
+	if strings.HasPrefix(path, "/assets/") && req.Method == "GET" {
 		h.assetsServer.ServeHTTP(w, req)
+		return
+	}
+	if path == "/auth" && req.Method == "POST" {
+		// TODO : Set the tright values!
+		if validCredentials(req) {
+			cookie := &http.Cookie{
+				Name:  "session",
+				Value: createJWT(),
+			}
+			http.SetCookie(w, cookie)
+			http.Redirect(w, req, "/", 303)
+			return
+		} else {
+			fmt.Fprint(w, "Invalid login dredentials")
+			http.Redirect(w, req, "/", 401)
+			return
+		}
+	}
+	if path == "/deauth" && req.Method == "POST" {
+		cookie := &http.Cookie{
+			Name:   "session",
+			Value:  "",
+			MaxAge: -1,
+		}
+		http.SetCookie(w, cookie)
+		http.Redirect(w, req, "/", 303)
 		return
 	}
 	log.Println(method, path)
@@ -70,7 +104,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 	}
-	context := context{h, req, page, document}
+	context := context{h, req, page, document, isAuthenticated(req)}
 	switch req.Method {
 	case "GET":
 		// Check that the template exists
@@ -94,26 +128,26 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/"+page, 303)
 		return
 	case "PUT":
-        max_file_size := int64(2000000)
-        if f, header, err := req.FormFile("file"); err == nil {
-            defer f.Close()
-            if header.Size > max_file_size {
+		max_file_size := int64(2000000)
+		if f, header, err := req.FormFile("file"); err == nil {
+			defer f.Close()
+			if header.Size > max_file_size {
 				http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(400), "File too large (2MB max)"), 400)
-                return
-            }
-            buff := make([]byte, header.Size)
-            for {
-                r := bufio.NewReader(f)
-                _, err = r.Read(buff)
-                if err != nil && err != io.EOF {
-                    panic(err)
-                }
-                if err != io.EOF {
-                    break
-                }
-            }
+				return
+			}
+			buff := make([]byte, header.Size)
+			for {
+				r := bufio.NewReader(f)
+				_, err = r.Read(buff)
+				if err != nil && err != io.EOF {
+					panic(err)
+				}
+				if err != io.EOF {
+					break
+				}
+			}
 			err = document.SetContent(string(buff))
-            w.Header().Add("HX-Refresh", "true")
+			w.Header().Add("HX-Refresh", "true")
 			if err != nil {
 				http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
 				return

@@ -14,6 +14,7 @@ COPY . .
 
 # Build the app
 RUN go build -o goapp ./cmd/web
+RUN GOOS=js GOARCH=wasm go build -o assets/main.wasm ./cmd/wasm
 
 FROM golang:1.23 as run
 

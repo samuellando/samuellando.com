@@ -12,5 +12,9 @@ RUN go mod download
 # Copy everything
 COPY . .
 
+# Build the wasm
+RUN GOOS=js GOARCH=wasm go build -o assets/main.wasm ./cmd/wasm
+
+
 EXPOSE 8080
 CMD ["go", "run", "./cmd/web"]

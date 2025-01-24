@@ -12,6 +12,8 @@ services:
     env_file: ".env"
     develop:
       watch:
+        - action: rebuild
+          path: ./cmd/wasm
         - action: sync+restart
           path: .
           target: /app

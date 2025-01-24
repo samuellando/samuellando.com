@@ -1,4 +1,4 @@
-package main
+package stores
 
 import (
 	"encoding/json"
@@ -17,11 +17,15 @@ type Project interface {
 }
 
 type ProjectStore interface {
-	Projects() ([]Project, error)
-	Close()
+	List() []Project
+    Sort() ProjectStore
+    Filter() ProjectStore
+    GroupBy() []ProjectStore
 }
 
-type basicPs struct{}
+type basicPs struct{
+    projects []Project
+}
 
 type project struct {
 	id          int
@@ -56,14 +60,19 @@ func (p *project) Url() string {
 	return p.url
 }
 
-func initializeProjectStore() ProjectStore {
-	return &basicPs{}
+func InitializeProjectStore() ProjectStore {
+    projects, err := loadProjects()
+    if err != nil {
+        panic(err)
+    }
+	return &basicPs{projects: projects}
 }
 
 func (ps *basicPs) Close() {
+    // TODO remove
 }
 
-func (ps *basicPs) Projects() ([]Project, error) {
+func loadProjects() ([]Project, error) {
 	url := "https://api.github.com/users/samuellando/repos?per_page=100"
 	client := http.Client{}
 	req, err := http.NewRequest("GET", url, nil)
@@ -108,10 +117,26 @@ func (ps *basicPs) Projects() ([]Project, error) {
 		if projectData["pushed_at"] != nil {
 			pushed = projectData["pushed_at"].(string)
 		}
-		if projectData["url"] != nil {
-			url = projectData["url"].(string)
+		if projectData["html_url"] != nil {
+			url = projectData["html_url"].(string)
 		}
 		projects = append(projects, &project{id: id, name: name, description: description, created: created, pushed: pushed, url: url})
 	}
 	return projects, nil
+}
+
+func (ps *basicPs) List() []Project {
+    return ps.projects
+}
+
+func (ps *basicPs) Sort() ProjectStore {
+    return ps
+}
+
+func (ps *basicPs) Filter() ProjectStore {
+    return ps
+}
+
+func (ps *basicPs) GroupBy() []ProjectStore {
+    return []ProjectStore{ps}
 }

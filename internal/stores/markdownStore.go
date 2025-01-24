@@ -1,4 +1,4 @@
-package main
+package stores
 
 import (
 	"database/sql"
@@ -103,7 +103,7 @@ type basicMds struct {
 	db *sql.DB
 }
 
-func initializeMarkdownStore() MarkdownStore {
+func InitializeMarkdownStore() MarkdownStore {
 	db := createDbConnection()
 	initializeModel(db)
 	return &basicMds{db: db}

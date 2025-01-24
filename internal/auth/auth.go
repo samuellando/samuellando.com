@@ -1,4 +1,4 @@
-package main
+package auth
 
 import (
 	"crypto"
@@ -41,7 +41,7 @@ func getPrivateKey() *rsa.PrivateKey {
 	return key
 }
 
-func createJWT() string {
+func CreateJWT() string {
 	header := header{Alg: "RSA256", Typ: "JWT"}
 	payload := payload{ValidTo: time.Now().Add(time.Hour)}
 	headerB, err := json.Marshal(header)
@@ -64,7 +64,7 @@ func createJWT() string {
 	return token
 }
 
-func validJWT(jwt string) bool {
+func ValidJWT(jwt string) bool {
 	public := getPrivateKey().Public().(*rsa.PublicKey)
 	// Split the JWT
 	parts := strings.Split(jwt, ".")
@@ -100,7 +100,7 @@ func validJWT(jwt string) bool {
 	return true
 }
 
-func validCredentials(req *http.Request) bool {
+func ValidCredentials(req *http.Request) bool {
 	reqUser := req.PostFormValue("user")
 	reqPassword := req.PostFormValue("password")
 	htpasswd := os.Getenv("ADMIN_HTPASSWD")

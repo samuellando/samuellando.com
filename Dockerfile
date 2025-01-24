@@ -13,7 +13,7 @@ RUN go mod download
 COPY . .
 
 # Build the app
-RUN go build -o goapp
+RUN go build -o goapp ./cmd/web
 
 FROM golang:1.23 as run
 

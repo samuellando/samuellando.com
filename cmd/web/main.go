@@ -9,12 +9,14 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+    "samuellando.com/internal/stores"
+    "samuellando.com/internal/auth"
 )
 
 type handler struct {
 	templates     template.Template
-	MarkdownStore MarkdownStore
-	ProjectStore  ProjectStore
+	MarkdownStore stores.MarkdownStore
+	ProjectStore  stores.ProjectStore
 	assetsServer  http.Handler
 }
 
@@ -22,7 +24,7 @@ type context struct {
 	Handler  *handler
 	Request  *http.Request
 	Page     string
-	Document Document
+	Document stores.Document
 	Admin    bool
 }
 
@@ -31,8 +33,8 @@ func createHandler(templateDir, assetsDir, assetsPrefix string) *handler {
 	if err != nil {
 		panic(err)
 	}
-	ms := initializeMarkdownStore()
-	ps := initializeProjectStore()
+	ms := stores.InitializeMarkdownStore()
+	ps := stores.InitializeProjectStore()
 	assetsServer := http.StripPrefix(assetsPrefix, http.FileServer(http.Dir(assetsDir)))
 	return &handler{MarkdownStore: ms, templates: *templates, assetsServer: assetsServer, ProjectStore: ps}
 }
@@ -42,7 +44,7 @@ func (h *handler) RenderMarkdown(page string) template.HTML {
 }
 
 func isAuthenticated(req *http.Request) bool {
-	if cookie, err := req.Cookie("session"); err == nil && validJWT(cookie.Value) {
+	if cookie, err := req.Cookie("session"); err == nil && auth.ValidJWT(cookie.Value) {
 		return true
 	} else {
 		return false
@@ -58,10 +60,10 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	if path == "/auth" && req.Method == "POST" {
 		// TODO : Set the tright values!
-		if validCredentials(req) {
+		if auth.ValidCredentials(req) {
 			cookie := &http.Cookie{
 				Name:  "session",
-				Value: createJWT(),
+				Value: auth.CreateJWT(),
 			}
 			http.SetCookie(w, cookie)
 			http.Redirect(w, req, "/", 303)
@@ -84,7 +86,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	log.Println(method, path)
 	var page string
-	var document Document
+	var document stores.Document
 	if path == "/" {
 		page = "index"
 	} else {

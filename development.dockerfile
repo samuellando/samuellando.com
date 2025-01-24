@@ -13,4 +13,4 @@ RUN go mod download
 COPY . .
 
 EXPOSE 8080
-CMD ["go", "run", "."]
+CMD ["go", "run", "./cmd/web"]

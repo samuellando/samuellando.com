@@ -24,6 +24,8 @@ github.com/llgcode/draw2d v0.0.0-20200110163050-b96d8208fcfc/go.mod h1:mVa0dA29D
 github.com/llgcode/ps v0.0.0-20150911083025-f1443b32eedb/go.mod h1:1l8ky+Ew27CMX29uG+a2hNOKpeNYEQjjtiALiBlFQbY=
 github.com/markfarnan/go-canvas v0.0.0-20200722235510-6971ccd00770 h1:7t1KxXXIIysYDk1ymAB3NeCRdp8WnV5+JqgSwAm6deg=
 github.com/markfarnan/go-canvas v0.0.0-20200722235510-6971ccd00770/go.mod h1:PqPh9d/lLHBot/ZoW4ZbZaRVLdBIHJZfPYLaC84RSI8=
+github.com/mattn/go-sqlite3 v1.14.24 h1:tpSp2G2KyMnnQu99ngJ47EIkWVmliIizyZBfPrBWDRM=
+github.com/mattn/go-sqlite3 v1.14.24/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
 github.com/tdewolff/canvas v0.0.0-20250121210638-095c8720cf5b h1:hGlhmAjxo8Yw1mEKliRu0RzxIP+CXkTS9UyM5VObFCE=
 github.com/tdewolff/canvas v0.0.0-20250121210638-095c8720cf5b/go.mod h1:gdKSRtBFBKd4Ty6ivWKct1o3TfhgG6TDJzKP90vEIyA=
 github.com/tdewolff/font v0.0.0-20250120192450-68a3ecdf9008 h1:qjVwh/3ItmR7J2cZt8vfpwGOwG8Azw7TAk1O9oD6O+4=

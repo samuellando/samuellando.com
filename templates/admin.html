@@ -3,11 +3,11 @@
         {{template "title" .}}
         {{template "nav" .}}
         {{if .Admin}}
-        <form hx-post="/deauth" hx-push-url="true" hx-target="body">
+        <form method="post" action="/deauth" hx-post="/deauth" hx-push-url="true" hx-target="body">
             <button type="submit">Log Out</button>
         </form>
         {{else}}
-        <form hx-post="/auth" hx-target="body" hx-push-url="true">
+        <form method="post" action="/auth" hx-post="/auth" hx-target="body" hx-push-url="true">
             <label>User </label>
             <input name="user" type="text"/><br/>
             <label>Password </label>

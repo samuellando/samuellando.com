@@ -9,6 +9,7 @@ services:
       - "8080:8080"
     depends_on:
       - db
+      - migrate
     env_file: ".env"
     develop:
       watch:
@@ -17,6 +18,14 @@ services:
         - action: sync+restart
           path: .
           target: /app
+
+  migrate:
+    build:
+      context: .
+      dockerfile: migrations.dockerfile
+    depends_on:
+      - db
+    env_file: ".env"
 
   db:
     image: postgres

@@ -13,6 +13,7 @@ require (
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/llgcode/draw2d v0.0.0-20200110163050-b96d8208fcfc // indirect
 	github.com/markfarnan/go-canvas v0.0.0-20200722235510-6971ccd00770 // indirect
+	github.com/mattn/go-sqlite3 v1.14.24 // indirect
 	github.com/tdewolff/canvas v0.0.0-20250121210638-095c8720cf5b // indirect
 	github.com/tdewolff/font v0.0.0-20250120192450-68a3ecdf9008 // indirect
 	github.com/tdewolff/minify/v2 v2.21.1 // indirect

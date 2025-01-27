@@ -3,20 +3,10 @@ package stores
 import (
 	"database/sql"
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 
 	"github.com/lib/pq"
-	_ "github.com/lib/pq"
-)
-
-var (
-	host     = os.Getenv("DB_HOST")
-	port     = os.Getenv("DB_PORT")
-	user     = os.Getenv("DB_USER")
-	password = os.Getenv("DB_PASSWORD")
-	dbname   = os.Getenv("DB_NAME")
 )
 
 type Document interface {
@@ -42,70 +32,12 @@ type MarkdownStore interface {
 	Close()
 }
 
-func createDbConnection() *sql.DB {
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		panic(err)
-	}
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-	return db
-}
-
-func initializeModel(db *sql.DB) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return fmt.Errorf("Failed to begin transaction: %w", err)
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			tx.Rollback()
-			panic(r) // Re-throw the panic
-		} else if err != nil {
-			tx.Rollback()
-		}
-	}()
-	query := `
-    CREATE TABLE IF NOT EXISTS document (
-        id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        title text NOT NULL,
-        content text NOT NULL,
-        published BOOL NOT NULL DEFAULT false,
-        created timestamp with time zone DEFAULT now()
-    );
-    CREATE TABLE IF NOT EXISTS tag (
-        id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-        value text UNIQUE NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS document_tag (
-        document bigint NOT NULL REFERENCES document (id) ON DELETE CASCADE,
-        tag bigint NOT NULL REFERENCES tag (id) ON DELETE CASCADE,
-        PRIMARY KEY (document, tag)
-    );
-    `
-	_, err = db.Exec(query)
-	if err != nil {
-		panic(err)
-	}
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("Failed to commit transaction: %w", err)
-	}
-	return nil
-}
 
 type basicMds struct {
 	db *sql.DB
 }
 
-func InitializeMarkdownStore() MarkdownStore {
-	db := createDbConnection()
-	initializeModel(db)
+func InitializeMarkdownStore(db *sql.DB) MarkdownStore {
 	return &basicMds{db: db}
 }
 

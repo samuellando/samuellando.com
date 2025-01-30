@@ -13,8 +13,6 @@
             <input name="file" type="file"/><br/>
             <label>Tags </label>
             <input name="tags" type="text" value='{{join .Document.Tags ","}}'/><br/>
-            <label>Published </label>
-            <input name="published" type="checkbox" value="true" {{if .Document.Published}}checked{{end}}/><br/>
             <button type="submit">Update</button>
         </form>
         <button hx-delete="/{{.Page}}/{{.Document.Id}}" hx-target="body" hx-push-url="true">

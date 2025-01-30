@@ -7,13 +7,7 @@
         {{if eq .Document nil}}
         <h2>Live Posts</h2>
             <ul>
-            {{range .Handler.MarkdownStore.Documents}}
-            <li><a href="/all/{{.Id}}">{{.Title}}</a></li>
-            {{end}}
-            </ul>
-        <h2>Drafts</h2>
-            <ul>
-            {{range .Handler.MarkdownStore.Drafts}}
+            {{range .Handler.DocumentStore.GetAll}}
             <li><a href="/all/{{.Id}}">{{.Title}}</a></li>
             {{end}}
             </ul>

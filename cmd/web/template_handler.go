@@ -3,25 +3,25 @@ package main
 import (
 	"bufio"
 	"fmt"
-    "io"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"samuellando.com/internal/auth"
-	"samuellando.com/internal/stores"
+	"samuellando.com/internal/store/document"
+	"samuellando.com/internal/store/project"
 	"strconv"
 	"strings"
 )
 
 type context struct {
-    Handler     *templateHandler
+	Handler     *templateHandler
 	Page        string
-	DocumentRef string
-	Document    stores.Document
+	Document    *document.Document
 	Admin       bool
 }
 
-func getPathContext(req *http.Request) *context {
+func getPathContext(req *http.Request) (string, string, bool) {
 	path := req.URL.Path
 	var page string
 	var documentRef string
@@ -31,7 +31,7 @@ func getPathContext(req *http.Request) *context {
 		page = req.PathValue("template")
 		documentRef = req.PathValue("document")
 	}
-	return &context{Page: page, DocumentRef: documentRef, Admin: isAuthenticated(req)}
+    return page, documentRef, isAuthenticated(req)
 }
 
 func isAuthenticated(req *http.Request) bool {
@@ -44,30 +44,31 @@ func isAuthenticated(req *http.Request) bool {
 
 type templateHandler struct {
 	templates     template.Template
-	MarkdownStore stores.MarkdownStore
-	ProjectStore  stores.ProjectStore
+	DocumentStore document.Store
+	ProjectStore  project.ProjectStore
 }
 
 func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	ctxt := getPathContext(req)
-    ctxt.Handler = h
-	if ctxt.DocumentRef != "" {
-		documentId, err := strconv.Atoi(ctxt.DocumentRef)
+	page, documentRef, admin := getPathContext(req)
+    var doc *document.Document
+	if documentRef != "" {
+		documentId, err := strconv.Atoi(documentRef)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(400), "document reference must be numeric"), 400)
 			return
 		}
-		ctxt.Document, err = h.MarkdownStore.GetDocumentById(documentId)
+        doc, err = h.DocumentStore.GetById(documentId)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(404), "document not found"), 404)
 			return
 		}
 	}
+    ctxt := &context{Handler: h, Page: page, Document: doc, Admin: admin}
 	switch req.Method {
 	case "GET":
 		h.getTemplate(ctxt, w, req)
 	case "POST":
-		h.createDocument(ctxt, w, req)
+		h.createDocument(w, req)
 	case "PUT":
 		h.updateDocument(ctxt, w, req)
 	case "DELETE":
@@ -88,71 +89,46 @@ func (h *templateHandler) getTemplate(ctxt *context, w http.ResponseWriter, req 
 	}
 }
 
-func (h *templateHandler) createDocument(context *context, w http.ResponseWriter, req *http.Request) {
+func (h *templateHandler) createDocument(w http.ResponseWriter, req *http.Request) {
 	title := req.PostFormValue("title")
 	content := req.PostFormValue("content")
 	tags := strings.Split(req.PostFormValue("tags"), ",")
-	document, err := h.MarkdownStore.CreateDocument(title, content, tags)
+    doc := document.CreateProto(func(df *document.DocumentFeilds) {
+        df.Title = title
+        df.Content = content
+        df.Tags = tags
+    })
+	err := h.DocumentStore.Add(doc)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
 		return
 	}
-	http.Redirect(w, req, fmt.Sprintf("/all/%d", document.Id()), 303)
+	http.Redirect(w, req, fmt.Sprintf("/all/%d", doc.Id()), 303)
 }
 
 func (h *templateHandler) updateDocument(ctxt *context, w http.ResponseWriter, req *http.Request) {
-	max_file_size := int64(2000000)
-	if f, header, err := req.FormFile("file"); err == nil {
-		defer f.Close()
-		if header.Size > max_file_size {
-			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(400), "File too large (2MB max)"), 400)
-			return
-		}
-		buff := make([]byte, header.Size)
-		for {
-			r := bufio.NewReader(f)
-			_, err = r.Read(buff)
-			if err != nil && err != io.EOF {
-				panic(err)
-			}
-			if err != io.EOF {
-				break
-			}
-		}
-		err = ctxt.Document.SetContent(string(buff))
-		w.Header().Add("HX-Refresh", "true")
-		if err != nil {
-			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
-			return
-		}
-	} else {
-		err = ctxt.Document.SetContent(req.PostFormValue("content"))
-		if err != nil {
-			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
-			return
-		}
-	}
-	err := ctxt.Document.SetTitle(req.PostFormValue("title"))
-	if err != nil {
+    title := req.PostFormValue("title")
+    tags := strings.Split(req.PostFormValue("tags"),",")
+	content, err, err_code := getUploadContent(req)
+    if err != nil {
+		log.Println(err)
+        http.Error(w, err.Error(), err_code)
+        return
+    }
+    if content == "" {
+        content = req.PostFormValue("content")
+    }
+    err = ctxt.Document.Update(func(df *document.DocumentFeilds) {
+        df.Title= title
+        df.Content= content
+        df.Tags = tags
+    })
+    if err != nil {
+		log.Println(err)
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
-		return
-	}
-	if req.PostFormValue("published") == "true" {
-		err = ctxt.Document.SetPublished(true)
-	} else {
-		err = ctxt.Document.SetPublished(false)
-	}
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
-		return
-	}
-	tags := strings.Split(req.PostFormValue("tags"), ",")
-	err = ctxt.Document.SetTags(tags)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
-		return
-	}
+        return
+    }
 	// And return the updated document
 	err = h.templates.ExecuteTemplate(w, "document", ctxt.Document)
 	if err != nil {
@@ -163,7 +139,7 @@ func (h *templateHandler) updateDocument(ctxt *context, w http.ResponseWriter, r
 }
 
 func (h *templateHandler) deleteDocument(ctxt *context, w http.ResponseWriter, req *http.Request) {
-	err := ctxt.Document.Delete()
+    err := h.DocumentStore.Remove(ctxt.Document)
 	// Failed to delete
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
@@ -173,3 +149,30 @@ func (h *templateHandler) deleteDocument(ctxt *context, w http.ResponseWriter, r
 	return
 }
 
+// Returns the contents of the uploaded file int the "file" field.
+// Returns an empty string if there is no file
+// Returns a non nil error if there are any problems, along with a status code.
+func getUploadContent(req *http.Request) (string, error, int) {
+	const max_file_size = int64(2000000)
+	f, header, err := req.FormFile("file")
+	// If there is no file
+	if err != nil {
+		return "", nil, 0
+	}
+	defer f.Close()
+	if header.Size > max_file_size {
+		return "", fmt.Errorf("%s : %s", http.StatusText(413), "File too large (2MB max)"), 413
+	}
+	buff := make([]byte, header.Size)
+	for {
+		r := bufio.NewReader(f)
+		_, err = r.Read(buff)
+		if err != nil && err != io.EOF {
+			return "", fmt.Errorf("%s : %s", http.StatusText(500), err), 500
+		}
+		if err != io.EOF {
+			break
+		}
+	}
+    return string(buff), nil, 0
+}

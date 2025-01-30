@@ -9,7 +9,8 @@ import (
 
 	"samuellando.com/internal/db"
 	"samuellando.com/internal/middleware"
-	"samuellando.com/internal/stores"
+	"samuellando.com/internal/store/document"
+	"samuellando.com/internal/store/project"
 )
 
 const TEMPLATE_DIR = "./templates"
@@ -25,16 +26,32 @@ var (
 )
 
 func main() {
-	templates, err := template.New("templates").Funcs(template.FuncMap{"join": strings.Join}).ParseGlob(TEMPLATE_DIR + "/*")
+	templates, err := template.New("templates").Funcs(template.FuncMap{
+        "join": strings.Join,
+        "byTag": func(needs string) func(*document.Document) bool {
+            return  func(d *document.Document) bool {
+                for _, tag := range d.Tags() {
+                    if tag == needs {
+                        return true
+                    }
+                }
+                return false
+            }
+        },
+    }).ParseGlob(TEMPLATE_DIR + "/*")
 	if err != nil {
 		panic(err)
 	}
 	db := db.ConnectPostgres(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
 	defer db.Close()
-	markdownStore := stores.InitializeMarkdownStore(db)
-	projectStore := stores.InitializeProjectStore()
+	markdownStore := document.CreateStore(db)
+	projectStore := project.InitializeProjectStore()
 
-	th := templateHandler{templates: *templates, MarkdownStore: markdownStore, ProjectStore: projectStore}
+	th := templateHandler{
+        templates: *templates, 
+        DocumentStore: markdownStore, 
+        ProjectStore: projectStore,
+    }
 
 	// Handling static assets
 	asset_hander := http.StripPrefix(ASSETS_PREFIX, http.FileServer(http.Dir(ASSETS_DIR)))

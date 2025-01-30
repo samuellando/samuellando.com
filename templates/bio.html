@@ -1,3 +1,3 @@
 {{block "bio" .}}
-    {{template "document" index (.Handler.MarkdownStore.GetDocumentsByTag "bio") 0}}
+    {{template "document" index (.Handler.DocumentStore.Filter (byTag "bio")).GetAll 0}}
 {{end}}

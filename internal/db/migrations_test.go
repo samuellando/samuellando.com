@@ -95,7 +95,9 @@ func TestValidateMigrationsOkay(t *testing.T) {
 func TestApplyMigrationsNoFiles(t *testing.T) {
 	db, dir := setUp()
 	defer tearDown(db, dir)
-	if err := ApplyMigrations(db, dir); err == nil {
+	if err := ApplyMigrations(db, func(o *Options) {
+        o.MigrationsDir = dir
+    }); err == nil {
 		t.Error("Should return an error when there are no migration files")
 	}
 }
@@ -112,7 +114,9 @@ func TestAppMigrationsUpdatesTable(t *testing.T) {
 		panic(err)
 	}
 
-	if err := ApplyMigrations(db, dir); err != nil {
+	if err := ApplyMigrations(db, func(o *Options) {
+        o.MigrationsDir = dir
+    }); err != nil {
 		t.Error("Should not fail")
 	}
     query = "SELECT count(*) FROM migrations;"
@@ -141,7 +145,9 @@ func TestAppMigrationsOrder(t *testing.T) {
 		panic(err)
 	}
 
-	if err := ApplyMigrations(db, dir); err != nil {
+	if err := ApplyMigrations(db, func(o *Options) {
+        o.MigrationsDir = dir
+    }); err != nil {
 		t.Error("Should not fail")
 	}
 	query := `INSERT INTO example (id) VALUES (123)`

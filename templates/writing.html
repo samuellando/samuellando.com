@@ -5,7 +5,7 @@
         {{template "edit" .}}
         {{if eq .Document nil}}
             <ul>
-            {{range .Handler.MarkdownStore.GetDocumentsByTag "writing"}}
+            {{range (.Handler.DocumentStore.Filter (byTag "writing")).GetAll}}
             <li><a href="/writing/{{.Id}}">{{.Title}}</a></li>
             {{end}}
             </ul>

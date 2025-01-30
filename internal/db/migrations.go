@@ -47,8 +47,18 @@ func ValidateMigrations(db *sql.DB, dir string) error {
 
 // Go through all the sql scrips in the specified directory and apply the
 // Ones that have not yet been applied, in lexical order.
-func ApplyMigrations(db *sql.DB, dir string) error {
-	missing, err := getMissingMigrations(db, dir)
+func ApplyMigrations(db *sql.DB, opts... Option) error {
+	options := Options{
+		RetrySecs:     10,
+		MigrationsDir: "./migrations",
+        Logger: log.Default(),
+	}
+
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	missing, err := getMissingMigrations(db, options.MigrationsDir)
 	if err != nil {
 		return err
 	}
@@ -58,8 +68,8 @@ func ApplyMigrations(db *sql.DB, dir string) error {
 	}
 	defer tx.Rollback()
 	for _, file := range missing {
-        log.Println("Applying:", file.Name())
-		b, err := os.ReadFile(filepath.Join(dir, file.Name()))
+        options.Logger.Println("Applying:", file.Name())
+		b, err := os.ReadFile(filepath.Join(options.MigrationsDir, file.Name()))
 		if err != nil {
 			return err
 		}

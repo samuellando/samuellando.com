@@ -15,9 +15,29 @@ type Store struct {
 	run func() ([]*Project, error)
 }
 
-func CreateStore() Store {
-	return Store{run: func() ([]*Project, error) {
-		return loadProjects()
+type Options struct {
+    Url string
+}
+
+func CreateStore(opts... func(*Options)) Store {
+    o := Options{Url: URL}
+    for _, opt := range opts {
+        opt(&o)
+    }
+    return Store{run: func() ([]*Project, error) {
+		return loadProjects(o.Url)
+	}}
+}
+
+func (ps *Store) New(d []*Project) store.Store[*Project] {
+	return &Store{run: func() ([]*Project, error) {
+		return d, nil
+	}}
+}
+
+func createErrorStore(err error) *Store {
+	return &Store{run: func() ([]*Project, error) {
+		return nil, err
 	}}
 }
 
@@ -39,46 +59,31 @@ func (ps *Store) GetAll() ([]*Project, error) {
 }
 
 func (ps *Store) Filter(f func(*Project) bool) store.Store[*Project] {
-	return &Store{run: func() ([]*Project, error) {
-		all, err := ps.run()
-		if err != nil {
-			return nil, err
-		}
-		return store.Filter(all, f), nil
-	}}
+    n, err := store.Filter(ps, f)
+    if err != nil {
+        return createErrorStore(err)
+    }
+    return n
 }
 
 func (ps *Store) Group(f func(*Project) string) map[string]store.Store[*Project] {
-	all, err := ps.run()
-	if err != nil {
-		return make(map[string]store.Store[*Project])
-	}
-	groups := store.Group(all, f)
-	res := make(map[string]store.Store[*Project])
-	for k := range groups {
-		res[k] = &Store{run: func() ([]*Project, error) {
-			all, err := ps.run()
-			if err != nil {
-				return nil, err
-			}
-			return store.Group(all, f)[k], nil
-		}}
-	}
-	return res
+    n, err := store.Group(ps, f)
+    if err != nil {
+        return map[string]store.Store[*Project]{"": createErrorStore(err)}
+    }
+    return n
 }
 
 func (ps *Store) Sort(f func(*Project, *Project) bool) store.Store[*Project] {
-	return &Store{run: func() ([]*Project, error) {
-		all, err := ps.run()
-		if err != nil {
-			return nil, err
-		}
-		return store.Sort(all, f), nil
-	}}
+    n, err := store.Sort(ps, f)
+    if err != nil {
+        return createErrorStore(err)
+    }
+    return n
 }
 
-func loadProjects() ([]*Project, error) {
-	req, err := createRequest()
+func loadProjects(url string) ([]*Project, error) {
+	req, err := createRequest(url)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to crete request : %s", err)
 	}
@@ -86,7 +91,7 @@ func loadProjects() ([]*Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get response : %s", err)
 	}
-    defer res.Body.Close()
+	defer res.Body.Close()
 	if res.StatusCode != 200 {
 		return nil, fmt.Errorf("Bad response code : %d", res.StatusCode)
 	}
@@ -94,27 +99,27 @@ func loadProjects() ([]*Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read response body : %s", err)
 	}
-    return unmarshalResponse(bytes)
+	return unmarshalResponse(bytes)
 }
 
-func createRequest() (*http.Request, error) {
-	if req, err := http.NewRequest("GET", URL, nil); err != nil {
+func createRequest(url string) (*http.Request, error) {
+	if req, err := http.NewRequest("GET", url, nil); err != nil {
 		return nil, err
 	} else {
 		req.Header.Set("Accept", "application/vnd.github+json")
-		req.Header.Set("X-GitHub-Api-Version", API_VERSION) 
+		req.Header.Set("X-GitHub-Api-Version", API_VERSION)
 		return req, nil
 	}
 }
 
 func unmarshalResponse(b []byte) ([]*Project, error) {
 	data := make([]*schema, 0)
-    if err := json.Unmarshal(b, &data); err != nil {
+	if err := json.Unmarshal(b, &data); err != nil {
 		return nil, fmt.Errorf("Failed to Unmarshal Json : %s", err)
 	}
 	projects := make([]*Project, 0, len(data))
 	for _, d := range data {
-        projects = append(projects, createProject(d))
-    }
-    return projects, nil
+		projects = append(projects, createProject(d))
+	}
+	return projects, nil
 }

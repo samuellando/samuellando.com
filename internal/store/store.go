@@ -24,19 +24,28 @@ type Store[T any] interface {
     Filter(func(T) bool) Store[T]
     Group(func(T) string) map[string]Store[T]
     Sort(func(T, T) bool) Store[T]
+    New([]T) Store[T]
 }
 
-func Filter[T any](all []T, f func(T) bool) []T {
+func Filter[T any](s Store[T], f func(T) bool) (Store[T], error) {
     filtered := make([]T, 0)
+    all, err := s.GetAll()
+    if err != nil {
+        return nil, err
+    }
     for _, elem := range all {
         if f(elem) {
             filtered = append(filtered, elem)
         }
     }
-    return filtered
+    return s.New(filtered), nil
 }
 
-func Group[T any](all []T, f func(T) string) map[string][]T {
+func Group[T any](s Store[T], f func(T) string) (map[string]Store[T], error) {
+    all, err := s.GetAll()
+    if err != nil {
+        return nil, err
+    }
     groups := make(map[string][]T)
     for _, elem := range all {
         group := f(elem)
@@ -46,7 +55,11 @@ func Group[T any](all []T, f func(T) string) map[string][]T {
             groups[group] = []T{elem}
         }
     }
-    return groups
+    stores := make(map[string]Store[T])
+    for group, a := range groups {
+        stores[group] = s.New(a)
+    }
+    return stores, nil
 }
 
 type by[T any] struct {
@@ -58,8 +71,12 @@ func (a *by[T]) Len() int           { return len(a.elems) }
 func (a *by[T]) Swap(i, j int)      { a.elems[i], a.elems[j] = a.elems[j], a.elems[i] }
 func (a *by[T]) Less(i, j int) bool { return a.lessFunc(a.elems[i], a.elems[j]) }
 
-func Sort[T any](all []T, less func(T, T) bool) []T {
+func Sort[T any](s Store[T], less func(T, T) bool) (Store[T], error) {
+    all, err := s.GetAll()
+    if err != nil {
+        return nil, err
+    }
     b := by[T]{elems: all, lessFunc: less}
     sort.Sort(&b)
-    return b.elems
+    return s.New(b.elems), nil
 }

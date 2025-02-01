@@ -174,26 +174,6 @@ func TestFilter(t *testing.T) {
 	}
 }
 
-func TestFilterUpdates(t *testing.T) {
-	ds, db := setup()
-	defer teardown(ds)
-	addDocument(db, "abc")
-	addDocument(db, "abd")
-	addDocument(db, "aaa")
-	filtered := ds.Filter(func(d *Document) bool {
-		return strings.HasPrefix(d.Title(), "ab")
-	})
-	data, _ := filtered.GetAll()
-	if len(data) != 2 {
-		t.Errorf("%d should contain 3 elements", len(data))
-	}
-	addDocument(db, "abg")
-	data, _ = filtered.GetAll()
-	if len(data) != 3 {
-		t.Errorf("%d should contain 3 elements", len(data))
-	}
-}
-
 func TestGetIdFiltered(t *testing.T) {
 	ds, db := setup()
 	defer teardown(ds)
@@ -236,36 +216,6 @@ func TestSort(t *testing.T) {
 	}
 }
 
-func TestSortUpdates(t *testing.T) {
-	ds, db := setup()
-	defer teardown(ds)
-	addDocument(db, "d")
-	addDocument(db, "b")
-	addDocument(db, "a")
-	sorted := ds.Sort(func(a, b *Document) bool {
-		return strings.Compare(a.Title(), b.Title()) < 0
-	})
-	data, _ := sorted.GetAll()
-	if len(data) != 3 {
-		t.Errorf("%d should contain 3 elements", len(data))
-	}
-	for i, c := range []string{"a", "b", "d"} {
-		if data[i].Title() != c {
-			t.Error("Out of order")
-		}
-	}
-	addDocument(db, "c")
-	data, _ = sorted.GetAll()
-	if len(data) != 4 {
-		t.Errorf("%d should contain 4 elements", len(data))
-	}
-	for i, c := range []string{"a", "b", "c", "d"} {
-		if data[i].Title() != c {
-			t.Error("Out of order")
-		}
-	}
-}
-
 func TestGroup(t *testing.T) {
 	ds, db := setup()
 	defer teardown(ds)
@@ -295,7 +245,7 @@ func TestGroup(t *testing.T) {
 	}
 }
 
-func TestGroupUpdates(t *testing.T) {
+func TestStack(t *testing.T) {
 	ds, db := setup()
 	defer teardown(ds)
 	addDocument(db, "abb")
@@ -309,104 +259,23 @@ func TestGroupUpdates(t *testing.T) {
 	addDocument(db, "haa")
 	addDocument(db, "hb")
 	addDocument(db, "hc")
-	groups := ds.Group(func(d *Document) string {
-		return string(d.Title()[0])
-	})
-	if len(groups) != 3 {
-		t.Error("Wrong number of groups")
-	}
-	expectedLens := map[string]int{"a": 2, "b": 3, "h": 6}
-	for k, s := range groups {
-		data, _ := s.GetAll()
-		if len(data) != expectedLens[k] {
-			t.Errorf("%d should contain %d elements", len(data), expectedLens[k])
-		}
-	}
-	addDocument(db, "haa")
-	expectedLens = map[string]int{"a": 2, "b": 3, "h": 7}
-	for k, s := range groups {
-		data, _ := s.GetAll()
-		if len(data) != expectedLens[k] {
-			t.Errorf("%d should contain %d elements", len(data), expectedLens[k])
-		}
-	}
-}
-
-func TestFilterGroupSortAndUpdate(t *testing.T) {
-	ds, db := setup()
-	defer teardown(ds)
-	addDocument(db, "iac")
-	addDocument(db, "iab")
-	addDocument(db, "iaa")
-	addDocument(db, "xad")
-	addDocument(db, "xab")
-	addDocument(db, "ibc")
-	addDocument(db, "ibb")
-	addDocument(db, "iba")
-	addDocument(db, "xbc")
-	addDocument(db, "xbb")
-	addDocument(db, "xba")
-	addDocument(db, "icc")
-	addDocument(db, "icb")
-	addDocument(db, "ica")
-	addDocument(db, "xcc")
-	addDocument(db, "xcb")
-	addDocument(db, "xca")
-	addDocument(db, "xco")
-	addDocument(db, "rja")
-	addDocument(db, "rja")
-	addDocument(db, "rja")
-	groups := ds.Filter(func(d *Document) bool {
-		return strings.Contains(d.Title(), "x")
-	}).Sort(func(a, b *Document) bool {
+	res, _ := ds.Sort(func(a, b *Document) bool {
 		return strings.Compare(a.Title(), b.Title()) < 0
-	}).Group(func(d *Document) string {
-		return string(d.Title()[1])
-	})
-	if len(groups) != 3 {
-		t.Error("Wrong number of groups")
-	}
-	expectedLens := map[string]int{"a": 2, "b": 3, "c": 4}
-	for k, s := range groups {
-		data, _ := s.GetAll()
-		if len(data) != expectedLens[k] {
-			t.Errorf("%s, %d should contain %d elements", k, len(data), expectedLens[k])
-		}
-	}
-	ga, _ := groups["a"].GetAll()
-	order := []string{"xab", "xad"}
-	for i, v := range ga {
-		if order[i] != v.Title() {
-			t.Error("Wrong ordering")
-		}
-	}
-	addDocument(db, "xac")
-	expectedLens = map[string]int{"a": 3, "b": 3, "c": 4}
-	for k, s := range groups {
-		data, _ := s.GetAll()
-		if len(data) != expectedLens[k] {
-			t.Errorf("%s, %d should contain %d elements", k, len(data), expectedLens[k])
-		}
-	}
-	ga, _ = groups["a"].GetAll()
-	order = []string{"xab", "xac", "xad"}
-	for i, v := range ga {
-		if order[i] != v.Title() {
-			t.Error("Wrong ordering")
-		}
-	}
-    ga[0].Update(func(df *DocumentFeilds) {
-        df.Title = "xcz"
-    })
-	expectedLens = map[string]int{"a": 2, "b": 3, "c": 5}
-	for k, s := range groups {
-		data, _ := s.GetAll()
-		if len(data) != expectedLens[k] {
-			t.Errorf("%s, %d should contain %d elements", k, len(data), expectedLens[k])
-		}
-	}
-    gc, _ := groups["c"].GetAll()
-    if gc[4].Title() != "xcz" {
-        t.Error("Wrong ordering after doc Update")
+	}).Group(func(p *Document) string {
+        return string(p.Title()[0])
+    })["h"].Filter(func(p *Document) bool {
+        return !strings.HasSuffix(p.Title(), "b")
+    }).GetAll()
+    if res[0].Title() != "haa" {
+        t.Fatalf("Wrong element %s", res[0].Title())
+    }
+    if res[1].Title() != "haa" {
+        t.Fatal("Wrong element")
+    }
+    if res[2].Title() != "hc" {
+        t.Fatal("Wrong element")
+    }
+    if res[3].Title() != "hc" {
+        t.Fatal("Wrong element")
     }
 }

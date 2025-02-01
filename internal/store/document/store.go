@@ -14,10 +14,21 @@ type Store struct {
 }
 
 func CreateStore(db *sql.DB) Store {
-	s := Store{db: db, run: func() ([]*Document, error) {
+	return Store{db: db, run: func() ([]*Document, error) {
 		return queryDocuments(db, "")
 	}}
-	return s
+}
+
+func createErrorStore(err error) *Store {
+	return &Store{db: nil, run: func() ([]*Document, error) {
+		return nil, err
+	}}
+}
+
+func (ds *Store) New(data []*Document) store.Store[*Document] {
+	return &Store{db: ds.db, run: func() ([]*Document, error) {
+        return data, nil
+	}}
 }
 
 func (ds *Store) GetById(id int) (*Document, error) {
@@ -104,42 +115,27 @@ func (ds *Store) Remove(d *Document) error {
 }
 
 func (ds *Store) Filter(f func(*Document) bool) store.Store[*Document] {
-	return &Store{run: func() ([]*Document, error) {
-		all, err := ds.run()
-		if err != nil {
-			return nil, err
-		}
-		return store.Filter(all, f), nil
-	}}
+    n, err := store.Filter(ds, f)
+    if err != nil {
+        return createErrorStore(err)
+    }
+    return n
 }
 
 func (ds *Store) Group(f func(*Document) string) map[string]store.Store[*Document] {
-	all, err := ds.run()
-	if err != nil {
-        return make(map[string]store.Store[*Document])
-	}
-	groups := store.Group(all, f)
-    res := make(map[string]store.Store[*Document])
-    for k := range groups {
-        res[k] = &Store{run: func() ([]*Document, error) {
-            all, err := ds.run()
-            if err != nil {
-                return nil, err
-            }
-            return store.Group(all, f)[k], nil
-        }}
+    m, err := store.Group(ds, f)
+    if err != nil {
+        return map[string]store.Store[*Document]{"": createErrorStore(err)}
     }
-    return res
+    return m
 }
 
 func (ds *Store) Sort(f func(*Document, *Document) bool) store.Store[*Document] {
-	return &Store{run: func() ([]*Document, error) {
-		all, err := ds.run()
-		if err != nil {
-			return nil, err
-		}
-		return store.Sort(all, f), nil
-	}}
+    n, err := store.Sort(ds, f)
+    if err != nil {
+        return createErrorStore(err)
+    }
+    return n
 }
 
 func queryDocuments(db *sql.DB, filter string, args ...any) ([]*Document, error) {

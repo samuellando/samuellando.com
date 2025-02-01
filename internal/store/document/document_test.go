@@ -84,7 +84,7 @@ func TestCreateProtoAndAdd(t *testing.T) {
     ds.Add(doc)
     if doc.Id() == -1 {
         t.Fatal("The doc should have an Id now")
-    }
+    Sort}
     query := "SELECT count(*) FROM document;"
     row := db.QueryRow(query)
     var count int

@@ -9,6 +9,10 @@ type testStore struct {
     items []string
 }
 
+func (ts *testStore) New(d []string) Store[string] {
+    return &testStore{d}
+}
+
 func (ts *testStore) GetById(id int) (string, error) {
     return ts.items[id], nil
 }
@@ -17,39 +21,19 @@ func (ts *testStore) GetAll() ([]string, error) {
     return ts.items, nil
 }
 
-func (ts *testStore) Add(s string) error {
-    ts.items = append(ts.items, s)
-    return nil
-}
-
-func (ts *testStore) Remove(s string) error {
-    for i, v := range ts.items {
-        if v == s {
-            ts.items = append(ts.items[:i], ts.items[i+1:]...)
-        }
-    }
-    ts.items = append(ts.items, s)
-    return nil
-}
-
 func (ts *testStore) Filter(f func(string) bool) Store[string] {
-    data, _ := ts.GetAll()
-    return &testStore{Filter(data, f)}
+    n, _ := Filter(ts, f)
+    return n
 }
 
 func (ts *testStore) Group(f func(string) string) map[string]Store[string] {
-    data, _ := ts.GetAll()
-    groups := Group(data, f)
-    res := make(map[string]Store[string])
-    for k, elems := range groups {
-        res[k] = &testStore{elems}
-    }
-    return res
+    n, _ := Group(ts, f)
+    return n
 }
 
 func (ts *testStore) Sort(f func(string, string) bool) Store[string] {
-    data, _ := ts.GetAll()
-    return &testStore{Sort(data, f)}
+    n, _ := Sort(ts, f)
+    return n
 }
 
 func setup() Store[string] {

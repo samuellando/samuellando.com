@@ -45,7 +45,7 @@ func isAuthenticated(req *http.Request) bool {
 type templateHandler struct {
 	templates     template.Template
 	DocumentStore document.Store
-	ProjectStore  project.ProjectStore
+	ProjectStore  project.Store
 }
 
 func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {

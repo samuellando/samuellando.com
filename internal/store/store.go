@@ -21,8 +21,6 @@ import(
 type Store[T any] interface {
     GetById(int) (T, error)
     GetAll() ([]T, error)
-    Add(T) error
-    Remove(T) error
     Filter(func(T) bool) Store[T]
     Group(func(T) string) map[string]Store[T]
     Sort(func(T, T) bool) Store[T]

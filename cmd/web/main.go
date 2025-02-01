@@ -45,7 +45,7 @@ func main() {
 	db := db.ConnectPostgres(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
 	defer db.Close()
 	markdownStore := document.CreateStore(db)
-	projectStore := project.InitializeProjectStore()
+	projectStore := project.CreateStore()
 
 	th := templateHandler{
         templates: *templates, 

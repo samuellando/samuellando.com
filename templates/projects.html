@@ -5,7 +5,7 @@
         {{template "title" .}}
         {{template "nav" .}}
         <ul>
-        {{range .Handler.ProjectStore.List}}
+        {{range .Handler.ProjectStore.GetAll}}
         <li>
             <b><a href="{{.Url}}">{{.Title}}</b></a><br/>
             {{.Description}}<br/>

@@ -7,18 +7,27 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"samuellando.com/internal/auth"
-	"samuellando.com/internal/store/document"
-	"samuellando.com/internal/store/project"
 	"strconv"
 	"strings"
+
+	"samuellando.com/internal/auth"
+	"samuellando.com/internal/datatypes"
+	"samuellando.com/internal/store"
+	"samuellando.com/internal/store/document"
+	"samuellando.com/internal/store/project"
 )
 
 type context struct {
-	Handler     *templateHandler
-	Page        string
-	Document    *document.Document
-	Admin       bool
+	ProjectStore          *project.Store
+	ProjectGroups         *datatypes.OrderedMap[string, store.Store[*project.Project]]
+	DocumentStore         *document.Store
+	DocumentGroups        *datatypes.OrderedMap[string, store.Store[*document.Document]]
+	Page                  string
+	Document              *document.Document
+	Admin                 bool
+	Req                   *http.Request
+	ProjectSortFunctions  map[string]sortFunctionReference[*project.Project]
+	ProjectGroupFunctions map[string]groupFunctionReference[*project.Project]
 }
 
 func getPathContext(req *http.Request) (string, string, bool) {
@@ -31,7 +40,7 @@ func getPathContext(req *http.Request) (string, string, bool) {
 		page = req.PathValue("template")
 		documentRef = req.PathValue("document")
 	}
-    return page, documentRef, isAuthenticated(req)
+	return page, documentRef, isAuthenticated(req)
 }
 
 func isAuthenticated(req *http.Request) bool {
@@ -50,20 +59,30 @@ type templateHandler struct {
 
 func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	page, documentRef, admin := getPathContext(req)
-    var doc *document.Document
+	var doc *document.Document
 	if documentRef != "" {
 		documentId, err := strconv.Atoi(documentRef)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(400), "document reference must be numeric"), 400)
 			return
 		}
-        doc, err = h.DocumentStore.GetById(documentId)
+		doc, err = h.DocumentStore.GetById(documentId)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(404), "document not found"), 404)
 			return
 		}
 	}
-    ctxt := &context{Handler: h, Page: page, Document: doc, Admin: admin}
+	ctxt := &context{
+		DocumentStore:         &h.DocumentStore,
+		ProjectStore:          &h.ProjectStore,
+		Page:                  page,
+		Document:              doc,
+		Admin:                 admin,
+		Req:                   req,
+		ProjectSortFunctions:  PROJECT_SORT_FUNCTIONS,
+		ProjectGroupFunctions: PROJECT_GROUP_FUNCTIONS,
+	}
+	applyFilters(ctxt)
 	switch req.Method {
 	case "GET":
 		h.getTemplate(ctxt, w, req)
@@ -93,11 +112,11 @@ func (h *templateHandler) createDocument(w http.ResponseWriter, req *http.Reques
 	title := req.PostFormValue("title")
 	content := req.PostFormValue("content")
 	tags := strings.Split(req.PostFormValue("tags"), ",")
-    doc := document.CreateProto(func(df *document.DocumentFeilds) {
-        df.Title = title
-        df.Content = content
-        df.Tags = tags
-    })
+	doc := document.CreateProto(func(df *document.DocumentFeilds) {
+		df.Title = title
+		df.Content = content
+		df.Tags = tags
+	})
 	err := h.DocumentStore.Add(doc)
 	if err != nil {
 		log.Println(err)
@@ -108,27 +127,27 @@ func (h *templateHandler) createDocument(w http.ResponseWriter, req *http.Reques
 }
 
 func (h *templateHandler) updateDocument(ctxt *context, w http.ResponseWriter, req *http.Request) {
-    title := req.PostFormValue("title")
-    tags := strings.Split(req.PostFormValue("tags"),",")
+	title := req.PostFormValue("title")
+	tags := strings.Split(req.PostFormValue("tags"), ",")
 	content, err, err_code := getUploadContent(req)
-    if err != nil {
+	if err != nil {
 		log.Println(err)
-        http.Error(w, err.Error(), err_code)
-        return
-    }
-    if content == "" {
-        content = req.PostFormValue("content")
-    }
-    err = ctxt.Document.Update(func(df *document.DocumentFeilds) {
-        df.Title= title
-        df.Content= content
-        df.Tags = tags
-    })
-    if err != nil {
+		http.Error(w, err.Error(), err_code)
+		return
+	}
+	if content == "" {
+		content = req.PostFormValue("content")
+	}
+	err = ctxt.Document.Update(func(df *document.DocumentFeilds) {
+		df.Title = title
+		df.Content = content
+		df.Tags = tags
+	})
+	if err != nil {
 		log.Println(err)
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
-        return
-    }
+		return
+	}
 	// And return the updated document
 	err = h.templates.ExecuteTemplate(w, "document", ctxt.Document)
 	if err != nil {
@@ -139,7 +158,7 @@ func (h *templateHandler) updateDocument(ctxt *context, w http.ResponseWriter, r
 }
 
 func (h *templateHandler) deleteDocument(ctxt *context, w http.ResponseWriter, req *http.Request) {
-    err := h.DocumentStore.Remove(ctxt.Document)
+	err := h.DocumentStore.Remove(ctxt.Document)
 	// Failed to delete
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
@@ -174,5 +193,26 @@ func getUploadContent(req *http.Request) (string, error, int) {
 			break
 		}
 	}
-    return string(buff), nil, 0
+	return string(buff), nil, 0
+}
+
+func applyFilters(c *context) {
+	group := c.Req.FormValue("group")
+	// And grab the associated function
+	switch c.Page {
+	case "projects":
+        sort := "byLastPush"
+        if group == "" {
+            group = "byLastPush"
+            c.Req.Form.Add("group", "byLastPush")
+        }
+        if sortFunc, ok := c.ProjectSortFunctions[sort]; ok {
+            c.ProjectStore = c.ProjectStore.Sort(sortFunc.Func).(*project.Store)
+        }
+        groupFunc, ok := c.ProjectGroupFunctions[group]
+        if ok {
+            c.ProjectGroups = c.ProjectStore.Group(groupFunc.Func)
+        }
+	default:
+	}
 }

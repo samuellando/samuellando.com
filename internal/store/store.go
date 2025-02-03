@@ -1,11 +1,14 @@
 package store
 
-import(
-    "sort"
+import (
+	"sort"
+	"strings"
+
+	"samuellando.com/internal/datatypes"
 )
 
 // A egneral interface for anything that stores anything.
-// 
+//
 // These support adding and removeing items, and should handle those operations
 // To the underlying data structures.
 //
@@ -13,7 +16,7 @@ import(
 // Wich make implementing Filter, Sort and Group a lot easier.
 //
 // Notes:
-// Clone() Is assumed to return a deep copy of the structure. The elements can 
+// Clone() Is assumed to return a deep copy of the structure. The elements can
 // be shared, but the store should be new.
 //
 // Reset() is assumed to have no side effects on the original underlying data
@@ -22,7 +25,7 @@ type Store[T any] interface {
     GetById(int) (T, error)
     GetAll() ([]T, error)
     Filter(func(T) bool) Store[T]
-    Group(func(T) string) map[string]Store[T]
+    Group(func(T) string) *datatypes.OrderedMap[string, Store[T]]
     Sort(func(T, T) bool) Store[T]
     New([]T) Store[T]
 }
@@ -41,23 +44,33 @@ func Filter[T any](s Store[T], f func(T) bool) (Store[T], error) {
     return s.New(filtered), nil
 }
 
-func Group[T any](s Store[T], f func(T) string) (map[string]Store[T], error) {
+func Group[T any](s Store[T], f func(T) string) (*datatypes.OrderedMap[string, Store[T]], error) {
     all, err := s.GetAll()
+    var zero datatypes.OrderedMap[string, Store[T]]
     if err != nil {
-        return nil, err
+        return &zero, err
     }
-    groups := make(map[string][]T)
+    // Classify the elements
+    groups := datatypes.NewOrderedMap[string, []T]()
+    groupNames := []string{}
     for _, elem := range all {
         group := f(elem)
-        if _, ok := groups[group]; ok {
-            groups[group] = append(groups[group], elem)
+        if v, ok := groups.Get(group); ok {
+            groups.Set(group, append(v, elem))
+            groupNames = append(groupNames, group)
         } else {
-            groups[group] = []T{elem}
+            groups.Set(group, []T{elem})
         }
     }
-    stores := make(map[string]Store[T])
-    for group, a := range groups {
-        stores[group] = s.New(a)
+    // Sorting the group names leads to better UX
+    sort.Slice(groupNames, func(i, j int) bool {
+        return strings.Compare(groupNames[i], groupNames[j]) > 0
+    })
+    // Generate the new stores
+    stores := datatypes.NewOrderedMap[string, Store[T]]()
+    for _, group := range groupNames {
+        a, _ := groups.Get(group)
+        stores.Set(group, s.New(a))
     }
     return stores, nil
 }

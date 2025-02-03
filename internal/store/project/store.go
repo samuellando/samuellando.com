@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"samuellando.com/internal/datatypes"
 	"samuellando.com/internal/store"
 )
 
@@ -66,10 +68,12 @@ func (ps *Store) Filter(f func(*Project) bool) store.Store[*Project] {
     return n
 }
 
-func (ps *Store) Group(f func(*Project) string) map[string]store.Store[*Project] {
+func (ps *Store) Group(f func(*Project) string) *datatypes.OrderedMap[string, store.Store[*Project]] {
     n, err := store.Group(ps, f)
     if err != nil {
-        return map[string]store.Store[*Project]{"": createErrorStore(err)}
+        m := datatypes.NewOrderedMap[string, store.Store[*Project]]()
+        m.Set("", createErrorStore(err))
+        return m
     }
     return n
 }

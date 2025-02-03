@@ -7,7 +7,7 @@
         {{if eq .Document nil}}
         <h2>Live Posts</h2>
             <ul>
-            {{range .Handler.DocumentStore.GetAll}}
+            {{range .DocumentStore.GetAll}}
             <li><a href="/all/{{.Id}}">{{.Title}}</a></li>
             {{end}}
             </ul>

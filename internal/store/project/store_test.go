@@ -99,11 +99,11 @@ func TestGroup(t *testing.T) {
 	groups := ps.Group(func(d *Project) string {
 		return string(d.Title()[0])
 	})
-	if len(groups) != 2 {
+	if groups.Len() != 2 {
 		t.Error("Wrong number of groups")
 	}
 	expectedLens := map[string]int{"H": 2, "B": 2}
-	for k, s := range groups {
+	for k, s := range groups.All() {
 		data, _ := s.GetAll()
 		if len(data) != expectedLens[k] {
 			t.Errorf("%d should contain %d elements", len(data), expectedLens[k])
@@ -114,11 +114,12 @@ func TestGroup(t *testing.T) {
 func TestStack(t *testing.T) {
 	ps, ts := setup()
 	defer teardown(ts)
-	res, _ := ps.Sort(func(a, b *Project) bool {
+	g, _ := ps.Sort(func(a, b *Project) bool {
 		return a.Id() < b.Id()
 	}).Group(func(p *Project) string {
         return strings.Split(p.Title(), "-")[0]
-    })["Bye"].Filter(func(p *Project) bool {
+    }).Get("Bye")
+    res, _ := g.Filter(func(p *Project) bool {
         return strings.HasSuffix(p.Title(), "two")
     }).GetAll()
     if res[0].Title() != "Bye-World-two" {

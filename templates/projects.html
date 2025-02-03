@@ -1,17 +1,49 @@
 {{block "projects" .}}
 <html>
-    {{template "head" .}}
-    <body>
-        {{template "title" .}}
-        {{template "nav" .}}
-        <ul>
-        {{range .Handler.ProjectStore.GetAll}}
+{{template "head" .}}
+
+<body>
+    {{template "title" .}}
+    {{template "nav" .}}
+    <form hx-get="/projects" hx-push-url="true" hx-target="body">
+        <label>Group By:</label>
+        <select name="group">
+            <option value="none"></option>
+            {{range $key, $value := .ProjectGroupFunctions}}
+            <option {{if eq $key ($.Req.FormValue "group")}}selected="selected" {{end}} value="{{$key}}">{{$value.Name}}
+            </option>
+            {{end}}
+        </select>
+        <br />
+        <input type="submit" />
+    </form>
+    {{if ne .ProjectGroups nil}}
+    {{range .ProjectGroups.ToSlice }}
+    <h3>{{.Key}}</h3>
+    <ul>
+        {{range .Value.GetAll}}
         <li>
-            <b><a href="{{.Url}}">{{.Title}}</b></a><br/>
-            {{.Description}}<br/>
+            <b><a href="{{.Url}}">{{.Title}}</b></a><br />
+            {{.Description}}<br />
+            Created: {{.Created}}<br />
+            Last PushP: {{.Pushed}}<br />
         </li>
         {{end}}
-        </ul>
-    </body>
+    </ul>
+    {{end}}
+    {{else}}
+    <ul>
+        {{range .ProjectStore.GetAll}}
+        <li>
+            <b><a href="{{.Url}}">{{.Title}}</b></a><br />
+            {{.Description}}<br />
+            Created: {{.Created}}<br />
+            Last PushP: {{.Pushed}}<br />
+        </li>
+        {{end}}
+    </ul>
+    {{end}}
+</body>
+
 </html>
 {{end}}

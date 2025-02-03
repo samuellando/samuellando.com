@@ -233,11 +233,11 @@ func TestGroup(t *testing.T) {
 	groups := ds.Group(func(d *Document) string {
 		return string(d.Title()[0])
 	})
-	if len(groups) != 3 {
+	if groups.Len() != 3 {
 		t.Error("Wrong number of groups")
 	}
 	expectedLens := map[string]int{"a": 2, "b": 3, "h": 6}
-	for k, s := range groups {
+	for k, s := range groups.All() {
 		data, _ := s.GetAll()
 		if len(data) != expectedLens[k] {
 			t.Errorf("%d should contain %d elements", len(data), expectedLens[k])
@@ -259,11 +259,12 @@ func TestStack(t *testing.T) {
 	addDocument(db, "haa")
 	addDocument(db, "hb")
 	addDocument(db, "hc")
-	res, _ := ds.Sort(func(a, b *Document) bool {
+	group, _ := ds.Sort(func(a, b *Document) bool {
 		return strings.Compare(a.Title(), b.Title()) < 0
 	}).Group(func(p *Document) string {
         return string(p.Title()[0])
-    })["h"].Filter(func(p *Document) bool {
+    }).Get("h")
+    res, _ := group.Filter(func(p *Document) bool {
         return !strings.HasSuffix(p.Title(), "b")
     }).GetAll()
     if res[0].Title() != "haa" {

@@ -3,6 +3,8 @@ package store
 import (
 	"strings"
 	"testing"
+
+	"samuellando.com/internal/datatypes"
 )
 
 type testStore struct {
@@ -26,7 +28,7 @@ func (ts *testStore) Filter(f func(string) bool) Store[string] {
     return n
 }
 
-func (ts *testStore) Group(f func(string) string) map[string]Store[string] {
+func (ts *testStore) Group(f func(string) string) *datatypes.OrderedMap[string, Store[string]] {
     n, _ := Group(ts, f)
     return n
 }
@@ -65,10 +67,11 @@ func TestGroup(t *testing.T) {
     res := ts.Group(func(s string) string {
         return string(s[0])
     })
-    if len(res) != 5 {
+    if res.Len() != 5 {
         t.Errorf("%s should contain 6 groups", res)
     }
-    data, _ := res["S"].GetAll()
+    g, _ := res.Get("S")
+    data, _ := g.GetAll()
     if len(data) != 2 {
         t.Errorf("%s should contain 2 items", data)
     }

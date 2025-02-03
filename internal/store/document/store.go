@@ -3,6 +3,8 @@ package document
 import (
 	"database/sql"
 	"fmt"
+
+	"samuellando.com/internal/datatypes"
 	"samuellando.com/internal/store"
 
 	"github.com/lib/pq"
@@ -122,10 +124,12 @@ func (ds *Store) Filter(f func(*Document) bool) store.Store[*Document] {
     return n
 }
 
-func (ds *Store) Group(f func(*Document) string) map[string]store.Store[*Document] {
+func (ds *Store) Group(f func(*Document) string) *datatypes.OrderedMap[string, store.Store[*Document]] {
     m, err := store.Group(ds, f)
     if err != nil {
-        return map[string]store.Store[*Document]{"": createErrorStore(err)}
+        m := datatypes.NewOrderedMap[string, store.Store[*Document]]()
+        m.Set("", createErrorStore(err))
+        return m
     }
     return m
 }

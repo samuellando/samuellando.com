@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// The schema expected from the extrenal API
 type schema struct {
 	ID       int    `json:"id"`
 	NodeID   string `json:"node_id"`

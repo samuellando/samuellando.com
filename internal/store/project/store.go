@@ -124,7 +124,7 @@ func unmarshalResponse(db *sql.DB, b []byte) ([]*Project, error) {
 	}
 	projects := make([]*Project, 0, len(data))
 	for _, d := range data {
-        p, err := createProject(db, d)
+        p, err := loadProject(db, d)
         if err != nil {
             return nil, err
         }

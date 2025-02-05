@@ -57,9 +57,9 @@ func Group[T any](s Store[T], f func(T) string) (*datatypes.OrderedMap[string, S
         group := f(elem)
         if v, ok := groups.Get(group); ok {
             groups.Set(group, append(v, elem))
-            groupNames = append(groupNames, group)
         } else {
             groups.Set(group, []T{elem})
+            groupNames = append(groupNames, group)
         }
     }
     // Sorting the group names leads to better UX

@@ -32,14 +32,10 @@ func (p *Project) Title() string {
 	return p.name
 }
 
-func (p *Project) GitDescription() string {
-	return p.gitDescription
-}
-
 func (p *Project) Description() string {
 	d := p.fields.Description
 	if d == "" {
-		return p.GitDescription()
+		return p.gitDescription
 	} else {
 		return d
 	}
@@ -87,10 +83,13 @@ func (p *Project) Update(opts ...func(*ProjectFields)) error {
 	}()
 	query := `
     UPDATE project SET 
-        Description = $1
+        description = $1
     WHERE 
         id = $2;`
 	_, err = tx.Exec(query, p.Description(), p.Id())
+	if err != nil {
+		return err
+	}
 	err = p.setTags(tx)
 	if err != nil {
 		return err
@@ -132,7 +131,7 @@ func (p *Project) setTags(tx *sql.Tx) error {
 	return nil
 }
 
-func createProject(db *sql.DB, s *schema) (*Project, error) {
+func loadProject(db *sql.DB, s *schema) (*Project, error) {
 	p := &Project{
 		db:             db,
 		id:             s.ID,

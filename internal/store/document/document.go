@@ -176,3 +176,13 @@ func copyOf(src []string) []string {
 	copy(tagsCopy, src)
 	return tagsCopy
 }
+
+func (d *Document) ToString() string {
+    content, err := d.Content()
+    if err != nil {
+        content = ""
+    }
+    s := d.Title() + "\n" +  content
+    return s
+}
+

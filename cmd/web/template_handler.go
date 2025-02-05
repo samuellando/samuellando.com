@@ -21,13 +21,13 @@ type context struct {
 	ProjectStore          *project.Store
 	ProjectGroups         *datatypes.OrderedMap[string, store.Store[*project.Project]]
 	DocumentStore         *document.Store
-	DocumentGroups        *datatypes.OrderedMap[string, store.Store[*document.Document]]
 	Page                  string
 	Document              *document.Document
 	Project               *project.Project
 	Admin                 bool
 	Req                   *http.Request
 	ProjectSortFunctions  map[string]sortFunctionReference[*project.Project]
+	DocumentSortFunctions map[string]sortFunctionReference[*document.Document]
 	ProjectGroupFunctions map[string]groupFunctionReference[*project.Project]
 }
 
@@ -62,34 +62,34 @@ func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	page, ref, admin := getPathContext(req)
 	var doc *document.Document
 	var proj *project.Project
-    switch page {
-    case "project":
-	if ref != "" {
-		projectId, err := strconv.Atoi(ref)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(400), "project reference must be numeric"), 400)
-			return
+	switch page {
+	case "project":
+		if ref != "" {
+			projectId, err := strconv.Atoi(ref)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(400), "project reference must be numeric"), 400)
+				return
+			}
+			proj, err = h.ProjectStore.GetById(projectId)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(404), "project not found"), 404)
+				return
+			}
 		}
-		proj, err = h.ProjectStore.GetById(projectId)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(404), "project not found"), 404)
-			return
+	default:
+		if ref != "" {
+			documentId, err := strconv.Atoi(ref)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(400), "document reference must be numeric"), 400)
+				return
+			}
+			doc, err = h.DocumentStore.GetById(documentId)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(404), "document not found"), 404)
+				return
+			}
 		}
 	}
-    default:
-	if ref != "" {
-		documentId, err := strconv.Atoi(ref)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(400), "document reference must be numeric"), 400)
-			return
-		}
-		doc, err = h.DocumentStore.GetById(documentId)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(404), "document not found"), 404)
-			return
-		}
-	}
-    }
 	ctxt := &context{
 		DocumentStore:         &h.DocumentStore,
 		ProjectStore:          &h.ProjectStore,
@@ -99,6 +99,7 @@ func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		Admin:                 admin,
 		Req:                   req,
 		ProjectSortFunctions:  PROJECT_SORT_FUNCTIONS,
+		DocumentSortFunctions: DOCUMENT_SORT_FUNCTIONS,
 		ProjectGroupFunctions: PROJECT_GROUP_FUNCTIONS,
 	}
 	applyFilters(ctxt)
@@ -263,5 +264,9 @@ func applyFilters(c *context) {
 			c.ProjectGroups = c.ProjectStore.Group(groupFunc.Func)
 		}
 	default:
+		sort := "byCreated"
+		if sortFunc, ok := c.DocumentSortFunctions[sort]; ok {
+			c.DocumentStore = c.DocumentStore.Sort(sortFunc.Func).(*document.Store)
+		}
 	}
 }

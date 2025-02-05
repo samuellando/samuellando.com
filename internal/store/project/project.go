@@ -196,3 +196,7 @@ func copyOf(src []string) []string {
 	copy(tagsCopy, src)
 	return tagsCopy
 }
+
+func (p *Project) ToString() string {
+    return p.Title() + p.Description()
+}

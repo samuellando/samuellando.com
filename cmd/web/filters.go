@@ -55,10 +55,10 @@ var PROJECT_GROUP_FUNCTIONS = map[string]groupFunctionReference[*project.Project
 }
 
 var DOCUMENT_SORT_FUNCTIONS = map[string]sortFunctionReference[*document.Document]{
-	"byTitle": sortFunctionReference[*document.Document]{
-		Name: "By Title",
-		Func: func(p1, p2 *document.Document) bool {
-			return strings.Compare(p1.Title(), p2.Title()) < 0
+	"byCreated": sortFunctionReference[*document.Document]{
+		Name: "By Date Created",
+		Func: func(d1, d2  *document.Document) bool {
+			return d1.Created().After(d2.Created())
 		},
 	},
 }

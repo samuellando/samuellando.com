@@ -9,6 +9,7 @@ import (
 
 	"samuellando.com/internal/db"
 	"samuellando.com/internal/middleware"
+	"samuellando.com/internal/search"
 	"samuellando.com/internal/store/document"
 	"samuellando.com/internal/store/project"
 )
@@ -47,12 +48,12 @@ func main() {
 	}
 	db := db.ConnectPostgres(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
 	defer db.Close()
-	markdownStore := document.CreateStore(db)
+	documentStore := document.CreateStore(db)
 	projectStore := project.CreateStore(db)
 
 	th := templateHandler{
 		templates:     *templates,
-		DocumentStore: markdownStore,
+		DocumentStore: documentStore,
 		ProjectStore:  projectStore,
 	}
 
@@ -62,10 +63,41 @@ func main() {
 	// Authentication endpoints
 	http.HandleFunc("POST /auth", middleware.LoggingFunc(authenticate))
 	http.HandleFunc("POST /deauth", middleware.LoggingFunc(deauthenticate))
+    // Search endpoint
+	http.HandleFunc("GET /search", middleware.LoggingFunc(createSearchHandler(
+        search.GenerateIndex("Document", "/writing", &documentStore),
+        search.GenerateIndex("Project", "/project", &projectStore),
+    )))
 	// Template and document CRUD handlers
 	http.Handle("/{$}", middleware.Logging(&th))
 	http.Handle("/{template}", middleware.Logging(&th))
 	http.Handle("/{template}/{document}", middleware.Logging(&th))
 
 	http.ListenAndServe(":8080", nil)
+}
+
+func createSearchHandler(indexes ...func() []search.IndexItem) http.HandlerFunc {
+    tmpl := `
+    <div>
+    {{.Type}} <a href="{{.Path}}">{{.Item.Title}}</a>
+    </div>
+    `
+    t, err := template.New("result").Parse(tmpl)
+    if err != nil {
+        panic(err)
+    }
+	return func(w http.ResponseWriter, req *http.Request) {
+		searchString := req.FormValue("q")
+		if searchString == "" {
+			return
+		}
+		for _, index := range indexes {
+			elements := index()
+			for _, elem := range elements {
+				if strings.Contains(elem.Text, searchString) {
+                    t.Execute(w, elem)
+				}
+			}
+		}
+	}
 }

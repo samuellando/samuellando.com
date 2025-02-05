@@ -22,24 +22,14 @@
     <h3>{{.Key}}</h3>
     <ul>
         {{range .Value.GetAll}}
-        <li>
-            <b><a href="{{.Url}}">{{.Title}}</b></a><br />
-            {{.Description}}<br />
-            Created: {{.Created}}<br />
-            Last PushP: {{.Pushed}}<br />
-        </li>
+        {{template "project-li" (arr . $)}}
         {{end}}
     </ul>
     {{end}}
     {{else}}
     <ul>
         {{range .ProjectStore.GetAll}}
-        <li>
-            <b><a href="{{.Url}}">{{.Title}}</b></a><br />
-            {{.Description}}<br />
-            Created: {{.Created}}<br />
-            Last PushP: {{.Pushed}}<br />
-        </li>
+        {{template "project-li" (arr . $)}}
         {{end}}
     </ul>
     {{end}}

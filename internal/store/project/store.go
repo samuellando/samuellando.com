@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+    "database/sql"
 
 	"samuellando.com/internal/datatypes"
 	"samuellando.com/internal/store"
@@ -21,18 +22,18 @@ type Options struct {
     Url string
 }
 
-func CreateStore(opts... func(*Options)) Store {
+func CreateStore(db *sql.DB, opts... func(*Options)) Store {
     o := Options{Url: URL}
     for _, opt := range opts {
         opt(&o)
     }
     return Store{run: func() ([]*Project, error) {
-		return loadProjects(o.Url)
+		return loadProjects(db, o.Url)
 	}}
 }
 
 func (ps *Store) New(d []*Project) store.Store[*Project] {
-	return &Store{run: func() ([]*Project, error) {
+    return &Store{run: func() ([]*Project, error) {
 		return d, nil
 	}}
 }
@@ -86,7 +87,7 @@ func (ps *Store) Sort(f func(*Project, *Project) bool) store.Store[*Project] {
     return n
 }
 
-func loadProjects(url string) ([]*Project, error) {
+func loadProjects(db *sql.DB, url string) ([]*Project, error) {
 	req, err := createRequest(url)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to crete request : %s", err)
@@ -103,7 +104,7 @@ func loadProjects(url string) ([]*Project, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read response body : %s", err)
 	}
-	return unmarshalResponse(bytes)
+	return unmarshalResponse(db, bytes)
 }
 
 func createRequest(url string) (*http.Request, error) {
@@ -116,14 +117,18 @@ func createRequest(url string) (*http.Request, error) {
 	}
 }
 
-func unmarshalResponse(b []byte) ([]*Project, error) {
+func unmarshalResponse(db *sql.DB, b []byte) ([]*Project, error) {
 	data := make([]*schema, 0)
 	if err := json.Unmarshal(b, &data); err != nil {
 		return nil, fmt.Errorf("Failed to Unmarshal Json : %s", err)
 	}
 	projects := make([]*Project, 0, len(data))
 	for _, d := range data {
-		projects = append(projects, createProject(d))
+        p, err := createProject(db, d)
+        if err != nil {
+            return nil, err
+        }
+		projects = append(projects, p)
 	}
 	return projects, nil
 }

@@ -24,6 +24,7 @@ type context struct {
 	DocumentGroups        *datatypes.OrderedMap[string, store.Store[*document.Document]]
 	Page                  string
 	Document              *document.Document
+	Project               *project.Project
 	Admin                 bool
 	Req                   *http.Request
 	ProjectSortFunctions  map[string]sortFunctionReference[*project.Project]
@@ -33,14 +34,14 @@ type context struct {
 func getPathContext(req *http.Request) (string, string, bool) {
 	path := req.URL.Path
 	var page string
-	var documentRef string
+	var ref string
 	if path == "/" {
 		page = "index"
 	} else {
 		page = req.PathValue("template")
-		documentRef = req.PathValue("document")
+		ref = req.PathValue("document")
 	}
-	return page, documentRef, isAuthenticated(req)
+	return page, ref, isAuthenticated(req)
 }
 
 func isAuthenticated(req *http.Request) bool {
@@ -58,10 +59,26 @@ type templateHandler struct {
 }
 
 func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	page, documentRef, admin := getPathContext(req)
+	page, ref, admin := getPathContext(req)
 	var doc *document.Document
-	if documentRef != "" {
-		documentId, err := strconv.Atoi(documentRef)
+	var proj *project.Project
+    switch page {
+    case "project":
+	if ref != "" {
+		projectId, err := strconv.Atoi(ref)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(400), "project reference must be numeric"), 400)
+			return
+		}
+		proj, err = h.ProjectStore.GetById(projectId)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(404), "project not found"), 404)
+			return
+		}
+	}
+    default:
+	if ref != "" {
+		documentId, err := strconv.Atoi(ref)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(400), "document reference must be numeric"), 400)
 			return
@@ -72,11 +89,13 @@ func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
+    }
 	ctxt := &context{
 		DocumentStore:         &h.DocumentStore,
 		ProjectStore:          &h.ProjectStore,
 		Page:                  page,
 		Document:              doc,
+		Project:               proj,
 		Admin:                 admin,
 		Req:                   req,
 		ProjectSortFunctions:  PROJECT_SORT_FUNCTIONS,
@@ -89,7 +108,7 @@ func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	case "POST":
 		h.createDocument(w, req)
 	case "PUT":
-		h.updateDocument(ctxt, w, req)
+		h.update(ctxt, w, req)
 	case "DELETE":
 		h.deleteDocument(ctxt, w, req)
 	}
@@ -124,6 +143,36 @@ func (h *templateHandler) createDocument(w http.ResponseWriter, req *http.Reques
 		return
 	}
 	http.Redirect(w, req, fmt.Sprintf("/all/%d", doc.Id()), 303)
+}
+
+func (h *templateHandler) update(ctxt *context, w http.ResponseWriter, req *http.Request) {
+	switch ctxt.Page {
+	case "project":
+		h.updateProject(ctxt, w, req)
+	default:
+		h.updateDocument(ctxt, w, req)
+	}
+}
+
+func (h *templateHandler) updateProject(ctxt *context, w http.ResponseWriter, req *http.Request) {
+	desc := req.PostFormValue("description")
+	tags := strings.Split(req.PostFormValue("tags"), ",")
+	err := ctxt.Project.Update(func(pf *project.ProjectFields) {
+		pf.Description = desc
+		pf.Tags = tags
+	})
+	if err != nil {
+		log.Println(err)
+		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
+		return
+	}
+	// And return the updated document
+	err = h.templates.ExecuteTemplate(w, "project-li", []any{ctxt.Project, ctxt})
+	if err != nil {
+		log.Println(err)
+		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
+		return
+	}
 }
 
 func (h *templateHandler) updateDocument(ctxt *context, w http.ResponseWriter, req *http.Request) {
@@ -201,18 +250,18 @@ func applyFilters(c *context) {
 	// And grab the associated function
 	switch c.Page {
 	case "projects":
-        sort := "byLastPush"
-        if group == "" {
-            group = "byLastPush"
-            c.Req.Form.Add("group", "byLastPush")
-        }
-        if sortFunc, ok := c.ProjectSortFunctions[sort]; ok {
-            c.ProjectStore = c.ProjectStore.Sort(sortFunc.Func).(*project.Store)
-        }
-        groupFunc, ok := c.ProjectGroupFunctions[group]
-        if ok {
-            c.ProjectGroups = c.ProjectStore.Group(groupFunc.Func)
-        }
+		sort := "byLastPush"
+		if group == "" {
+			group = "byLastPush"
+			c.Req.Form.Add("group", "byLastPush")
+		}
+		if sortFunc, ok := c.ProjectSortFunctions[sort]; ok {
+			c.ProjectStore = c.ProjectStore.Sort(sortFunc.Func).(*project.Store)
+		}
+		groupFunc, ok := c.ProjectGroupFunctions[group]
+		if ok {
+			c.ProjectGroups = c.ProjectStore.Group(groupFunc.Func)
+		}
 	default:
 	}
 }

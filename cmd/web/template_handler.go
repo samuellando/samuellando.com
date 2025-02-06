@@ -261,6 +261,19 @@ func applyFilters(c *context) {
 	// And grab the associated function
 	switch c.Page {
 	case "projects":
+		if tagFiltering == "true" {
+			c.ProjectStore = c.ProjectStore.Filter(func(p *project.Project) bool {
+				for _, pt := range p.Tags() {
+					for _, t := range tags {
+						if pt == t {
+							return true
+						}
+					}
+				}
+				return false
+			}).(*project.Store)
+            c.FilterTags = tags
+		}
 		sort := "byLastPush"
 		if group == "" {
 			group = "byLastPush"

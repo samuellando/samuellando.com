@@ -13,6 +13,8 @@
             /><label>{{.}}</label>
             {{end}}
             </form>
+            <button hx-get="?filter-out-tags=true" hx-push-url="true" hx-target="body">Uncheck All</button>
+            <button hx-get="?" hx-push-url="true" hx-target="body">Check All</button>
             <ul>
             {{range (.DocumentStore.Filter (byTag "writing")).GetAll}}
             <li><a href="/writing/{{.Id}}">{{.Title}}</a></li>

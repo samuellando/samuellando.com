@@ -15,6 +15,7 @@ const URL = "https://api.github.com/users/samuellando/repos?per_page=100"
 const API_VERSION = "2022-11-28"
 
 type Store struct {
+    db *sql.DB
 	run func() ([]*Project, error)
 }
 
@@ -27,13 +28,13 @@ func CreateStore(db *sql.DB, opts... func(*Options)) Store {
     for _, opt := range opts {
         opt(&o)
     }
-    return Store{run: func() ([]*Project, error) {
+    return Store{db: db, run: func() ([]*Project, error) {
 		return loadProjects(db, o.Url)
 	}}
 }
 
 func (ps *Store) New(d []*Project) store.Store[*Project] {
-    return &Store{run: func() ([]*Project, error) {
+    return &Store{db: ps.db, run: func() ([]*Project, error) {
 		return d, nil
 	}}
 }
@@ -86,6 +87,52 @@ func (ps *Store) Sort(f func(*Project, *Project) bool) store.Store[*Project] {
     }
     return n
 }
+
+func (ps *Store) AllTags() []string {
+    query := `
+    SELECT
+        t.value
+    FROM tag t
+    LEFT JOIN project_tag pt ON pt.tag = t.id
+    WHERE pt.project is not Null and t.value <> '';
+    `
+    rows, err := ps.db.Query(query)
+    if err != nil {
+        return []string{}
+    }
+    tags := make([]string, 0)
+    for rows.Next() {
+        var value string
+        rows.Scan(&value)
+        tags = append(tags, value)
+    }
+    return tags
+}
+
+func (ds *Store) AllSharedTags(tag string) []string {
+    query := `
+    SELECT
+        t2.value
+    FROM project d
+    JOIN project_tag pt1 ON pt1.project = d.id
+    JOIN tag t1 ON t1.id = pt1.tag
+    JOIN project_tag pt2 ON pt2.project = d.id
+    JOIN tag t2 ON t2.id = pt2.tag
+    WHERE t1.value = $1 and t2.value <> $1;
+    `
+    rows, err := ds.db.Query(query, tag)
+    if err != nil {
+        return []string{}
+    }
+    tags := make([]string, 0)
+    for rows.Next() {
+        var value string
+        rows.Scan(&value)
+        tags = append(tags, value)
+    }
+    return tags
+}
+
 
 func loadProjects(db *sql.DB, url string) ([]*Project, error) {
 	req, err := createRequest(url)

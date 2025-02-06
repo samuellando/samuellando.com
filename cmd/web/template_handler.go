@@ -29,6 +29,7 @@ type context struct {
 	ProjectSortFunctions  map[string]sortFunctionReference[*project.Project]
 	DocumentSortFunctions map[string]sortFunctionReference[*document.Document]
 	ProjectGroupFunctions map[string]groupFunctionReference[*project.Project]
+	FilterTags            []string
 }
 
 func getPathContext(req *http.Request) (string, string, bool) {
@@ -248,6 +249,15 @@ func getUploadContent(req *http.Request) (string, error, int) {
 
 func applyFilters(c *context) {
 	group := c.Req.FormValue("group")
+	tagFiltering := c.Req.FormValue("filter-out-tags")
+	tags := make([]string, 0)
+	if tagFiltering == "true" {
+		if arr, ok := c.Req.Form["filter-tag"]; ok {
+			for _, v := range arr {
+				tags = append(tags, v)
+			}
+		}
+	}
 	// And grab the associated function
 	switch c.Page {
 	case "projects":
@@ -264,6 +274,19 @@ func applyFilters(c *context) {
 			c.ProjectGroups = c.ProjectStore.Group(groupFunc.Func)
 		}
 	default:
+		if tagFiltering == "true" {
+			c.DocumentStore = c.DocumentStore.Filter(func(d *document.Document) bool {
+				for _, dt := range d.Tags() {
+					for _, t := range tags {
+						if dt == t {
+							return true
+						}
+					}
+				}
+				return false
+			}).(*document.Store)
+            c.FilterTags = tags
+		}
 		sort := "byCreated"
 		if sortFunc, ok := c.DocumentSortFunctions[sort]; ok {
 			c.DocumentStore = c.DocumentStore.Sort(sortFunc.Func).(*document.Store)

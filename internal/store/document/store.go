@@ -142,6 +142,51 @@ func (ds *Store) Sort(f func(*Document, *Document) bool) store.Store[*Document] 
     return n
 }
 
+func (ds *Store) AllTags() []string {
+    query := `
+    SELECT
+        t.value
+    FROM tag t
+    LEFT JOIN document_tag dt ON dt.tag = t.id
+    WHERE dt.document is not Null;
+    `
+    rows, err := ds.db.Query(query)
+    if err != nil {
+        return []string{}
+    }
+    tags := make([]string, 0)
+    for rows.Next() {
+        var value string
+        rows.Scan(&value)
+        tags = append(tags, value)
+    }
+    return tags
+}
+
+func (ds *Store) AllSharedTags(tag string) []string {
+    query := `
+    SELECT
+        t2.value
+    FROM document d
+    JOIN document_tag dt1 ON dt1.document = d.id
+    JOIN tag t1 ON t1.id = dt1.tag
+    JOIN document_tag dt2 ON dt2.document = d.id
+    JOIN tag t2 ON t2.id = dt2.tag
+    WHERE t1.value = $1 and t2.value <> $1;
+    `
+    rows, err := ds.db.Query(query, tag)
+    if err != nil {
+        return []string{}
+    }
+    tags := make([]string, 0)
+    for rows.Next() {
+        var value string
+        rows.Scan(&value)
+        tags = append(tags, value)
+    }
+    return tags
+}
+
 func queryDocuments(db *sql.DB, filter string, args ...any) ([]*Document, error) {
 	query := `
     SELECT 

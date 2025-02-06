@@ -6,6 +6,15 @@
         {{template "edit" .}}
         {{if eq .Document nil}}
         <h2>Live Posts</h2>
+            <form hx-get="?filter-out-tags=true" hx-trigger="input" hx-target="body" hx-push-url="true">
+            {{range .DocumentStore.AllSharedTags "writing"}}
+            <input type="checkbox" name="filter-tag"  value="{{.}}" 
+            {{if or (eq $.FilterTags nil) (includes . $.FilterTags)}}
+            checked
+            {{end}}
+            /><label>{{.}}</label>
+            {{end}}
+            </form>
             <ul>
             {{range .DocumentStore.GetAll}}
             <li><a href="/all/{{.Id}}">{{.Title}}</a></li>

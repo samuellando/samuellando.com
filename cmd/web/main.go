@@ -42,6 +42,14 @@ func main() {
 		"arr": func(els ...any) []any {
 			return els
 		},
+		"includes": func(s string, arr []string) bool {
+            for _, v := range arr {
+                if v == s {
+                    return true
+                }
+            }
+            return false
+		},
 	}).ParseGlob(TEMPLATE_DIR + "/*")
 	if err != nil {
 		panic(err)

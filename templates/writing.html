@@ -4,6 +4,15 @@
         {{template "nav" .}}
         {{template "edit" .}}
         {{if eq .Document nil}}
+            <form hx-get="?filter-out-tags=true" hx-trigger="input" hx-target="body" hx-push-url="true">
+            {{range .DocumentStore.AllSharedTags "writing"}}
+            <input type="checkbox" name="filter-tag"  value="{{.}}" 
+            {{if or (eq $.FilterTags nil) (includes . $.FilterTags)}}
+            checked
+            {{end}}
+            /><label>{{.}}</label>
+            {{end}}
+            </form>
             <ul>
             {{range (.DocumentStore.Filter (byTag "writing")).GetAll}}
             <li><a href="/writing/{{.Id}}">{{.Title}}</a></li>

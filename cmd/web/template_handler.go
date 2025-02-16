@@ -42,15 +42,7 @@ func getPathContext(req *http.Request) (string, string, bool) {
 		page = req.PathValue("template")
 		ref = req.PathValue("document")
 	}
-	return page, ref, isAuthenticated(req)
-}
-
-func isAuthenticated(req *http.Request) bool {
-	if cookie, err := req.Cookie("session"); err == nil && auth.ValidJWT(cookie.Value) {
-		return true
-	} else {
-		return false
-	}
+	return page, ref, auth.IsAuthenticated(req)
 }
 
 type templateHandler struct {

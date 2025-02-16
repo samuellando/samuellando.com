@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"samuellando.com/internal/auth"
 	"samuellando.com/internal/db"
 	"samuellando.com/internal/middleware"
 	"samuellando.com/internal/search"
@@ -69,43 +70,21 @@ func main() {
 	asset_hander := http.StripPrefix(ASSETS_PREFIX, http.FileServer(http.Dir(ASSETS_DIR)))
 	http.Handle(fmt.Sprintf("GET %s/{asset}", ASSETS_PREFIX), asset_hander)
 	// Authentication endpoints
-	http.HandleFunc("POST /auth", middleware.LoggingFunc(authenticate))
-	http.HandleFunc("POST /deauth", middleware.LoggingFunc(deauthenticate))
+	http.HandleFunc("POST /auth", middleware.LoggingFunc(auth.Authenticate))
+	http.HandleFunc("POST /deauth", middleware.LoggingFunc(auth.Deauthenticate))
     // Search endpoint
 	http.HandleFunc("GET /search", middleware.LoggingFunc(createSearchHandler(
         search.GenerateIndex("Document", "/writing", &documentStore),
         search.GenerateIndex("Project", "/project", &projectStore),
     )))
 	// Template and document CRUD handlers
-	http.Handle("/{$}", middleware.Logging(&th))
-	http.Handle("/{template}", middleware.Logging(&th))
-	http.Handle("/{template}/{document}", middleware.Logging(&th))
+	http.Handle("GET /{$}", middleware.Logging(&th))
+	http.Handle("GET /{template}", middleware.Logging(&th))
+	http.Handle("GET /{template}/{document}", middleware.Logging(&th))
+    // Authenticated actions
+	http.Handle("/{$}", middleware.Logging(middleware.Authenticated(&th)))
+	http.Handle("/{template}", middleware.Logging(middleware.Authenticated(&th)))
+	http.Handle("/{template}/{document}", middleware.Logging(middleware.Authenticated(&th)))
 
 	http.ListenAndServe(":8080", nil)
-}
-
-func createSearchHandler(indexes ...func() []search.IndexItem) http.HandlerFunc {
-    tmpl := `
-    <div>
-    {{.Type}} <a href="{{.Path}}">{{.Item.Title}}</a>
-    </div>
-    `
-    t, err := template.New("result").Parse(tmpl)
-    if err != nil {
-        panic(err)
-    }
-	return func(w http.ResponseWriter, req *http.Request) {
-		searchString := req.FormValue("q")
-		if searchString == "" {
-			return
-		}
-		for _, index := range indexes {
-			elements := index()
-			for _, elem := range elements {
-				if strings.Contains(elem.Text, searchString) {
-                    t.Execute(w, elem)
-				}
-			}
-		}
-	}
 }

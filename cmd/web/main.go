@@ -73,7 +73,7 @@ func main() {
 	http.HandleFunc("POST /auth", middleware.LoggingFunc(auth.Authenticate))
 	http.HandleFunc("POST /deauth", middleware.LoggingFunc(auth.Deauthenticate))
     // Search endpoint
-	http.HandleFunc("GET /search", middleware.LoggingFunc(createSearchHandler(
+	http.HandleFunc("GET /search", middleware.LoggingFunc(search.CreateSearchHandler(
         search.GenerateIndex("Document", "/writing", &documentStore),
         search.GenerateIndex("Project", "/project", &projectStore),
     )))

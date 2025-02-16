@@ -1,13 +1,12 @@
-package main
+package search
 
 import (
     "net/http"
     "html/template"
     "strings"
-    "samuellando.com/internal/search"
 )
 
-func createSearchHandler(indexes ...func() []search.IndexItem) http.HandlerFunc {
+func CreateSearchHandler(indexes ...func() []IndexItem) http.HandlerFunc {
     tmpl := `
     <div>
     {{.Type}} <a href="{{.Path}}">{{.Item.Title}}</a>

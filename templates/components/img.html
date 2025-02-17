@@ -1,0 +1,12 @@
+{{block "img" .}}
+<img 
+    src="{{.Src}}"
+    alt="{{.Alt}}"
+    {{if ne .Height ""}}
+        height="{{.Height}}"
+    {{end}}
+    {{if ne .Width ""}}
+        width="{{.Width}}"
+    {{end}}
+/></a>
+{{end}}

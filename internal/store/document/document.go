@@ -7,7 +7,10 @@ package document
 import (
 	"database/sql"
 	"fmt"
+	"html/template"
 	"time"
+
+	"samuellando.com/internal/markdown"
 )
 
 // The fields a document contains
@@ -43,6 +46,14 @@ func (d *Document) Content() (string, error) {
 	}
 	return d.fields.Content, nil
 }
+
+func (d *Document) Html() (template.HTML, error) {
+    content, err := d.Content() 
+    if err != nil {
+        return "", err
+    }
+    return markdown.ToHtml(content)
+} 
 
 func (d *Document) Tags() []string {
 	return copyOf(d.fields.Tags)

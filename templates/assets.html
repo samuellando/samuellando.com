@@ -1,0 +1,26 @@
+{{block "assets" .}}
+{{template "head" .}}
+{{template "title" .}}
+<form hx-encoding='multipart/form-data' hx-post="/asset" hx-target="body" >
+    <label>File </label>
+    <input name="file" type="file" /><br />
+    <button type="submit">Upload</button>
+</form>
+<table id="list">
+    <tr>
+        <th>Name</th>
+        <th>Created</th>
+        <th>Link</th>
+        <th>Delete</th>
+    </tr>
+    {{range .GetAll}}
+    <tr>
+        <td>{{.Name}}</td>
+        <td>{{.Created}}</td>
+        <td><a hx-boost="false" href="/asset/{{.Name}}">/asset/{{.Name}}</a></td>
+        <td><button hx-target="body" hx-delete="/asset/{{.Name}}">Delete</button></td>
+    </tr>
+    {{end}}
+</table>
+{{template "foot" .}}
+{{end}}

@@ -14,11 +14,12 @@ import (
 	"samuellando.com/internal/search"
 	"samuellando.com/internal/store/document"
 	"samuellando.com/internal/store/project"
+	"samuellando.com/internal/store/asset"
 )
 
 const TEMPLATE_DIR = "./templates"
-const ASSETS_DIR = "./assets"
-const ASSETS_PREFIX = "/assets"
+const STATIC_DIR = "./static"
+const STATIC_PREFIX = "/static"
 
 var (
 	DB_HOST     = os.Getenv("DB_HOST")
@@ -34,16 +35,21 @@ func main() {
 	defer db.Close()
 	documentStore := document.CreateStore(db)
 	projectStore := project.CreateStore(db)
+	assetStore := asset.CreateStore(db)
 
 	th := templateHandler{
 		templates:     *templates,
 		DocumentStore: documentStore,
 		ProjectStore:  projectStore,
 	}
+    ah := assetHandler{
+        Store: &assetStore,
+        Templates: *templates,
+    }
 
 	// Handling static assets
-	asset_hander := http.StripPrefix(ASSETS_PREFIX, http.FileServer(http.Dir(ASSETS_DIR)))
-	http.Handle(fmt.Sprintf("GET %s/{asset}", ASSETS_PREFIX), asset_hander)
+	static_hander := http.StripPrefix(STATIC_PREFIX, http.FileServer(http.Dir(STATIC_DIR)))
+	http.Handle(fmt.Sprintf("GET %s/{asset}", STATIC_PREFIX), static_hander)
 	// Authentication endpoints
 	http.HandleFunc("POST /auth", middleware.LoggingFunc(auth.Authenticate))
 	http.HandleFunc("POST /deauth", middleware.LoggingFunc(auth.Deauthenticate))
@@ -60,6 +66,11 @@ func main() {
 	http.Handle("/{$}", middleware.Logging(middleware.Authenticated(&th)))
 	http.Handle("/{template}", middleware.Logging(middleware.Authenticated(&th)))
 	http.Handle("/{template}/{document}", middleware.Logging(middleware.Authenticated(&th)))
+	// Handling user assets
+	http.Handle("GET /asset", middleware.Logging(&ah))
+	http.Handle("POST /asset", middleware.Logging(middleware.Authenticated(&ah)))
+	http.Handle("GET /asset/{asset}", middleware.Logging(&ah))
+	http.Handle("DELETE /asset/{asset}", middleware.Logging(middleware.Authenticated(&ah)))
 
 	http.ListenAndServe(":8080", nil)
 }

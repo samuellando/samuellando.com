@@ -98,7 +98,11 @@ func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	applyFilters(ctxt)
 	switch req.Method {
 	case "GET":
-		h.getTemplate(ctxt, w, req)
+		if strings.HasPrefix(ctxt.Page, "download") {
+			h.downloadDocument(ctxt, w, req)
+		} else {
+			h.getTemplate(ctxt, w, req)
+		}
 	case "POST":
 		h.createDocument(w, req)
 	case "PUT":
@@ -117,6 +121,21 @@ func (h *templateHandler) getTemplate(ctxt *context, w http.ResponseWriter, req 
 	err := h.templates.ExecuteTemplate(w, ctxt.Page, ctxt)
 	if err != nil {
 		log.Println(err)
+		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
+	}
+}
+
+func (h *templateHandler) downloadDocument(ctxt *context, w http.ResponseWriter, req *http.Request) {
+	filename := fmt.Sprintf("%s.md", ctxt.Document.Title())
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Header().Set("Content-Type", "text/markdown")
+	w.WriteHeader(http.StatusOK)
+    content, err := ctxt.Document.Content()
+    if err != nil {
+		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
+    }
+	_, err = w.Write([]byte(content))
+	if err != nil {
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
 	}
 }

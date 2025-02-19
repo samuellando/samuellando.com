@@ -11,6 +11,9 @@
             <textarea rows="30" cols="100" name="content">{{.Document.Content}}</textarea><br/>
             <label>File </label>
             <input name="file" type="file"/><br/>
+            <a hx-boost="false" href="/download/{{.Document.Id}}">
+                Download as File
+            </a>
             <label>Tags </label>
             <input name="tags" type="text" value='{{join .Document.Tags ","}}'/><br/>
             <button type="submit">Update</button>

@@ -23,6 +23,7 @@ WORKDIR /app
 COPY --from=build /app/goapp .
 COPY --from=build /app/templates ./templates
 COPY --from=build /app/static ./static
+COPY --from=build /app/migrations ./migrations
 
 EXPOSE 8080
 RUN pwd

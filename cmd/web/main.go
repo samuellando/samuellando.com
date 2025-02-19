@@ -12,9 +12,9 @@ import (
 	"samuellando.com/internal/db"
 	"samuellando.com/internal/middleware"
 	"samuellando.com/internal/search"
+	"samuellando.com/internal/store/asset"
 	"samuellando.com/internal/store/document"
 	"samuellando.com/internal/store/project"
-	"samuellando.com/internal/store/asset"
 )
 
 const TEMPLATE_DIR = "./templates"
@@ -31,7 +31,10 @@ var (
 
 func main() {
 	templates := parseTemplates()
-	db := db.ConnectPostgres(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
+	db := db.ConnectPostgres(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME,
+		func(o *db.Options) {
+            o.RetrySecs = -1
+		})
 	defer db.Close()
 	documentStore := document.CreateStore(db)
 	projectStore := project.CreateStore(db)
@@ -42,10 +45,10 @@ func main() {
 		DocumentStore: documentStore,
 		ProjectStore:  projectStore,
 	}
-    ah := assetHandler{
-        Store: &assetStore,
-        Templates: *templates,
-    }
+	ah := assetHandler{
+		Store:     &assetStore,
+		Templates: *templates,
+	}
 
 	// Handling static assets
 	static_hander := http.StripPrefix(STATIC_PREFIX, http.FileServer(http.Dir(STATIC_DIR)))

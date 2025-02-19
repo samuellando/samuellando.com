@@ -31,7 +31,6 @@ func setup() (Store, *sql.DB) {
 
 func teardown(s Store) {
 	s.db.Close()
-	testutil.ResetDb()
 }
 
 func addDocument(db *sql.DB, title string) int {

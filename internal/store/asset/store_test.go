@@ -28,7 +28,6 @@ func setupStore() (Store, *sql.DB) {
 
 func teardownStore(s Store) {
 	s.db.Close()
-	testutil.ResetDb()
 }
 
 func TestStoreAdd(t *testing.T) {

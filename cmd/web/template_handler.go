@@ -130,10 +130,10 @@ func (h *templateHandler) downloadDocument(ctxt *context, w http.ResponseWriter,
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	w.Header().Set("Content-Type", "text/markdown")
 	w.WriteHeader(http.StatusOK)
-    content, err := ctxt.Document.Content()
-    if err != nil {
+	content, err := ctxt.Document.Content()
+	if err != nil {
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
-    }
+	}
 	_, err = w.Write([]byte(content))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
@@ -283,7 +283,7 @@ func applyFilters(c *context) {
 				}
 				return false
 			}).(*project.Store)
-            c.FilterTags = tags
+			c.FilterTags = tags
 		}
 		sort := "byLastPush"
 		if group == "" {
@@ -309,7 +309,7 @@ func applyFilters(c *context) {
 				}
 				return false
 			}).(*document.Store)
-            c.FilterTags = tags
+			c.FilterTags = tags
 		}
 		sort := "byCreated"
 		if sortFunc, ok := c.DocumentSortFunctions[sort]; ok {

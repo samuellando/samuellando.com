@@ -10,10 +10,10 @@ import (
 )
 
 func setUp() (*sql.DB, string) {
-    db := ConnectSQLite(":memory:", func(opts *Options) {
-        opts.RetrySecs = -1
-        opts.MigrationsDir = ""
-    })
+	db := ConnectSQLite(":memory:", func(opts *Options) {
+		opts.RetrySecs = -1
+		opts.MigrationsDir = ""
+	})
 	if db == nil {
 		panic("Failed in memory test DB")
 	}
@@ -34,18 +34,18 @@ func tearDown(db *sql.DB, dir string) {
 }
 
 func TestInitializeMigrations(t *testing.T) {
-    db := ConnectSQLite(":memory:", func(opts *Options) {
-        opts.RetrySecs = -1
-        opts.MigrationsDir = ""
-    })
+	db := ConnectSQLite(":memory:", func(opts *Options) {
+		opts.RetrySecs = -1
+		opts.MigrationsDir = ""
+	})
 	if db == nil {
 		panic("Failed in memory test DB")
 	}
-    defer db.Close()
-    InitalizeMigrations(db)
+	defer db.Close()
+	InitalizeMigrations(db)
 	migrationName := "0001_example"
 	query := `INSERT INTO migrations (migration_name) VALUES ($1)`
-    _, err := db.Exec(query, migrationName)
+	_, err := db.Exec(query, migrationName)
 	if err != nil {
 		t.Error("The migrations table should exist")
 	}
@@ -96,8 +96,8 @@ func TestApplyMigrationsNoFiles(t *testing.T) {
 	db, dir := setUp()
 	defer tearDown(db, dir)
 	if err := ApplyMigrations(db, func(o *Options) {
-        o.MigrationsDir = dir
-    }); err == nil {
+		o.MigrationsDir = dir
+	}); err == nil {
 		t.Error("Should return an error when there are no migration files")
 	}
 }
@@ -115,17 +115,17 @@ func TestAppMigrationsUpdatesTable(t *testing.T) {
 	}
 
 	if err := ApplyMigrations(db, func(o *Options) {
-        o.MigrationsDir = dir
-    }); err != nil {
+		o.MigrationsDir = dir
+	}); err != nil {
 		t.Error("Should not fail")
 	}
-    query = "SELECT count(*) FROM migrations;"
-    var count int
-    row := db.QueryRow(query)
-    row.Scan(&count)
-    if count == 0 {
-        t.Error("Should update the table")
-    }
+	query = "SELECT count(*) FROM migrations;"
+	var count int
+	row := db.QueryRow(query)
+	row.Scan(&count)
+	if count == 0 {
+		t.Error("Should update the table")
+	}
 }
 func TestAppMigrationsOrder(t *testing.T) {
 	db, dir := setUp()
@@ -146,8 +146,8 @@ func TestAppMigrationsOrder(t *testing.T) {
 	}
 
 	if err := ApplyMigrations(db, func(o *Options) {
-        o.MigrationsDir = dir
-    }); err != nil {
+		o.MigrationsDir = dir
+	}); err != nil {
 		t.Error("Should not fail")
 	}
 	query := `INSERT INTO example (id) VALUES (123)`

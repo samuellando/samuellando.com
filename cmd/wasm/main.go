@@ -21,23 +21,23 @@ func main() {
 
 	rect := canvas.Rectangle(w, h)
 
-    frame_delay := time.Second / FPS
-    planets := []*planet {
-        ceratePlanet(200, 200, 100, 0.50, 10, canvas.Black),
-        ceratePlanet(50, 50, 50, 1, 5, canvas.Blue),
-    }
-    ctx.SetFill(canvas.White)
+	frame_delay := time.Second / FPS
+	planets := []*planet{
+		ceratePlanet(200, 200, 100, 0.50, 10, canvas.Black),
+		ceratePlanet(50, 50, 50, 1, 5, canvas.Blue),
+	}
+	ctx.SetFill(canvas.White)
 	for {
-        start := time.Now()
-        for _, p := range planets {
-            p.draw(ctx)
-        }
-        sleep := frame_delay - time.Since(start)
-        if sleep > 0 {
-            time.Sleep(frame_delay)
-        } else {
-            fmt.Println("Dropped frames")
-        }
+		start := time.Now()
+		for _, p := range planets {
+			p.draw(ctx)
+		}
+		sleep := frame_delay - time.Since(start)
+		if sleep > 0 {
+			time.Sleep(frame_delay)
+		} else {
+			fmt.Println("Dropped frames")
+		}
 		ctx.DrawPath(0, 0, rect)
 	}
 }

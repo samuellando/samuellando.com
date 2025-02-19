@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"log"
-    "time"
 	"net/http"
+	"time"
 )
 
 type logResponseWriter struct {
@@ -26,14 +26,14 @@ func (w *logResponseWriter) WriteHeader(statusCode int) {
 
 func LoggingFunc(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-        logWriter := &logResponseWriter{writer: w, code: 200}
+		logWriter := &logResponseWriter{writer: w, code: 200}
 		log.Printf("Request: [%s] %s\n", req.Method, req.URL.Path)
-        start := time.Now()
+		start := time.Now()
 		h(logWriter, req)
 		log.Printf("Response: %d (in %s)", logWriter.code, time.Since(start))
 	}
 }
 
 func Logging(h http.Handler) http.HandlerFunc {
-    return LoggingFunc(h.ServeHTTP)
+	return LoggingFunc(h.ServeHTTP)
 }

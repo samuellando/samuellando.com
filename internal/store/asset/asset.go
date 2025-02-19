@@ -27,8 +27,8 @@ func CreateProto(opts ...func(*AssetFields)) Asset {
 	for _, opt := range opts {
 		opt(&fields)
 	}
-    content := make([]byte, len(fields.Content))
-    copy(content, fields.Content)
+	content := make([]byte, len(fields.Content))
+	copy(content, fields.Content)
 	return Asset{name: fields.Name, content: content, loaded: true}
 }
 
@@ -75,9 +75,9 @@ func (a *Asset) Delete() error {
 	if err != nil {
 		return err
 	}
-    err = tx.Commit()
+	err = tx.Commit()
 	if err != nil {
 		return fmt.Errorf("Failed to commit transaction: %w", err)
 	}
-    return nil
+	return nil
 }

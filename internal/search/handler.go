@@ -1,21 +1,21 @@
 package search
 
 import (
-    "net/http"
-    "html/template"
-    "strings"
+	"html/template"
+	"net/http"
+	"strings"
 )
 
 func CreateSearchHandler(indexes ...func() []IndexItem) http.HandlerFunc {
-    tmpl := `
+	tmpl := `
     <div>
     {{.Type}} <a href="{{.Path}}">{{.Item.Title}}</a>
     </div>
     `
-    t, err := template.New("result").Parse(tmpl)
-    if err != nil {
-        panic(err)
-    }
+	t, err := template.New("result").Parse(tmpl)
+	if err != nil {
+		panic(err)
+	}
 	return func(w http.ResponseWriter, req *http.Request) {
 		searchString := req.FormValue("q")
 		if searchString == "" {
@@ -25,7 +25,7 @@ func CreateSearchHandler(indexes ...func() []IndexItem) http.HandlerFunc {
 			elements := index()
 			for _, elem := range elements {
 				if strings.Contains(elem.Text, searchString) {
-                    t.Execute(w, elem)
+					t.Execute(w, elem)
 				}
 			}
 		}

@@ -2,7 +2,7 @@ package search
 
 import (
 	"fmt"
-    "samuellando.com/internal/store"
+	"samuellando.com/internal/store"
 )
 
 // Interface for stored items that are Searchable

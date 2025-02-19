@@ -173,10 +173,10 @@ func loadProject(db *sql.DB, s *schema) (*Project, error) {
 			return nil, err
 		}
 	}
-    pDesc := ""
-    if desc.Valid {
-        pDesc = desc.String
-    }
+	pDesc := ""
+	if desc.Valid {
+		pDesc = desc.String
+	}
 	pTags := make([]string, 0, len(tags))
 	for _, tag := range tags {
 		if tag.Valid {
@@ -198,5 +198,5 @@ func copyOf(src []string) []string {
 }
 
 func (p *Project) ToString() string {
-    return p.Title() + p.Description()
+	return p.Title() + p.Description()
 }

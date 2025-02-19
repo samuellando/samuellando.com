@@ -33,7 +33,7 @@ func main() {
 	templates := parseTemplates()
 	db := db.ConnectPostgres(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME,
 		func(o *db.Options) {
-            o.RetrySecs = -1
+			o.RetrySecs = -1
 		})
 	defer db.Close()
 	documentStore := document.CreateStore(db)

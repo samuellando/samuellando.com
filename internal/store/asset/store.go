@@ -3,8 +3,8 @@ package asset
 import (
 	"database/sql"
 	"fmt"
-    "samuellando.com/internal/store"
-    "samuellando.com/internal/datatypes"
+	"samuellando.com/internal/datatypes"
+	"samuellando.com/internal/store"
 )
 
 type Store struct {
@@ -13,9 +13,9 @@ type Store struct {
 }
 
 func CreateStore(db *sql.DB) Store {
-    return Store{db: db, run: func() ([]*Asset, error) {
-        return loadAssets(db)
-    }}
+	return Store{db: db, run: func() ([]*Asset, error) {
+		return loadAssets(db)
+	}}
 }
 
 func createErrorStore(err error) *Store {
@@ -53,29 +53,29 @@ func (as *Store) Add(a *Asset) error {
 }
 
 func (as *Store) GetById(id int) (*Asset, error) {
-    assets, err := as.run()
-    if err != nil {
-        return nil, err
-    }
-    for _, a := range assets {
-        if a.Id() == id {
-            return a, nil
-        }
-    }
-    return nil, fmt.Errorf("Asset with id: %d does not exist", id)
+	assets, err := as.run()
+	if err != nil {
+		return nil, err
+	}
+	for _, a := range assets {
+		if a.Id() == id {
+			return a, nil
+		}
+	}
+	return nil, fmt.Errorf("Asset with id: %d does not exist", id)
 }
 
 func (as *Store) GetByName(name string) (*Asset, error) {
-    assets, err := as.run()
-    if err != nil {
-        return nil, err
-    }
-    for _, a := range assets {
-        if a.Name() == name {
-            return a, nil
-        }
-    }
-    return nil, fmt.Errorf("Asset with name: %s does not exist", name)
+	assets, err := as.run()
+	if err != nil {
+		return nil, err
+	}
+	for _, a := range assets {
+		if a.Name() == name {
+			return a, nil
+		}
+	}
+	return nil, fmt.Errorf("Asset with name: %s does not exist", name)
 }
 
 func (as *Store) GetAll() ([]*Asset, error) {
@@ -83,52 +83,52 @@ func (as *Store) GetAll() ([]*Asset, error) {
 }
 
 func (as *Store) Filter(f func(*Asset) bool) store.Store[*Asset] {
-    n, err := store.Filter(as, f)
-    if err != nil {
-        return createErrorStore(err)
-    }
-    return n
+	n, err := store.Filter(as, f)
+	if err != nil {
+		return createErrorStore(err)
+	}
+	return n
 }
 
 func (as *Store) Group(f func(*Asset) string) *datatypes.OrderedMap[string, store.Store[*Asset]] {
-    n, err := store.Group(as, f)
-    if err != nil {
-        m := datatypes.NewOrderedMap[string, store.Store[*Asset]]()
-        m.Set("", createErrorStore(err))
-        return m
-    }
-    return n
+	n, err := store.Group(as, f)
+	if err != nil {
+		m := datatypes.NewOrderedMap[string, store.Store[*Asset]]()
+		m.Set("", createErrorStore(err))
+		return m
+	}
+	return n
 }
 
 func (as *Store) Sort(f func(*Asset, *Asset) bool) store.Store[*Asset] {
-    n, err := store.Sort(as, f)
-    if err != nil {
-        return createErrorStore(err)
-    }
-    return n
+	n, err := store.Sort(as, f)
+	if err != nil {
+		return createErrorStore(err)
+	}
+	return n
 }
 
 func (as *Store) New(d []*Asset) store.Store[*Asset] {
-    return &Store{db: as.db, run: func() ([]*Asset, error) {
+	return &Store{db: as.db, run: func() ([]*Asset, error) {
 		return d, nil
 	}}
 }
 
 func loadAssets(db *sql.DB) ([]*Asset, error) {
-    rows, err := db.Query(`
+	rows, err := db.Query(`
     SELECT 
         id, name, created
     FROM
         asset
     `)
-    if err != nil {
-        return nil, err
-    }
-    assets := make([]*Asset, 0)
-    for rows.Next() {
-        asset := Asset{db: db, loaded: false}
-        rows.Scan(&asset.id, &asset.name, &asset.created)
-        assets = append(assets, &asset)
-    }
-    return assets, nil
+	if err != nil {
+		return nil, err
+	}
+	assets := make([]*Asset, 0)
+	for rows.Next() {
+		asset := Asset{db: db, loaded: false}
+		rows.Scan(&asset.id, &asset.name, &asset.created)
+		assets = append(assets, &asset)
+	}
+	return assets, nil
 }

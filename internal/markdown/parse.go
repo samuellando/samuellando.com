@@ -37,12 +37,12 @@ type list struct {
 
 func parseTags(out io.Writer, t gositter.SyntaxTree) error {
 	nodes := t.Nodes()
-    // If this is a leaf, just return it's value
+	// If this is a leaf, just return it's value
 	if len(nodes) == 0 {
 		out.Write([]byte(t.Value()))
 		return nil
 	}
-    // Otherwise check if there is an exiting template
+	// Otherwise check if there is an exiting template
 	var tag string
 	var data interface{}
 	var err error
@@ -106,7 +106,7 @@ func parseTags(out io.Writer, t gositter.SyntaxTree) error {
 		tag = t.Tag()
 		data = list
 	default:
-        // If there is no template, continue traversing the tree.
+		// If there is no template, continue traversing the tree.
 		for _, node := range nodes {
 			err := parseTags(out, node)
 			if err != nil {
@@ -115,7 +115,7 @@ func parseTags(out io.Writer, t gositter.SyntaxTree) error {
 		}
 		return nil
 	}
-    // Execute the template
+	// Execute the template
 	if err != nil {
 		return err
 	}

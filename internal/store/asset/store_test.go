@@ -208,4 +208,3 @@ func TestStoreSort(t *testing.T) {
 		t.Errorf("expected assets sorted by name, got %s and %s", assets[0].Name(), assets[1].Name())
 	}
 }
-

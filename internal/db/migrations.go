@@ -3,7 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
-    "log"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -47,11 +47,11 @@ func ValidateMigrations(db *sql.DB, dir string) error {
 
 // Go through all the sql scrips in the specified directory and apply the
 // Ones that have not yet been applied, in lexical order.
-func ApplyMigrations(db *sql.DB, opts... Option) error {
+func ApplyMigrations(db *sql.DB, opts ...Option) error {
 	options := Options{
 		RetrySecs:     10,
 		MigrationsDir: "./migrations",
-        Logger: log.Default(),
+		Logger:        log.Default(),
 	}
 
 	for _, opt := range opts {
@@ -68,7 +68,7 @@ func ApplyMigrations(db *sql.DB, opts... Option) error {
 	}
 	defer tx.Rollback()
 	for _, file := range missing {
-        options.Logger.Println("Applying:", file.Name())
+		options.Logger.Println("Applying:", file.Name())
 		b, err := os.ReadFile(filepath.Join(options.MigrationsDir, file.Name()))
 		if err != nil {
 			return err
@@ -98,13 +98,13 @@ func getMissingMigrations(db *sql.DB, dir string) ([]os.DirEntry, error) {
 	// Read migration files
 	files, err := os.ReadDir(dir)
 	if err != nil {
-        return nil, err
+		return nil, err
 	}
-    // Verify that there is at least one migration file.
+	// Verify that there is at least one migration file.
 	if len(files) == 0 {
 		return nil, fmt.Errorf("No migration files found in %s", dir)
 	}
-    // Sort the files in order and list the missing ones.
+	// Sort the files in order and list the missing ones.
 	missing := make([]os.DirEntry, 0, len(files))
 	sort.Sort(byFileName(files))
 	for _, file := range files {

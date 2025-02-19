@@ -22,7 +22,7 @@ func GetDbCredentials() (string, string, string, string, string, func(*db.Option
 	options := func(opts *db.Options) {
 		opts.RetrySecs = -1
 		opts.MigrationsDir = ""
-        opts.Logger = CreateDiscardLogger()
+		opts.Logger = CreateDiscardLogger()
 	}
 	return DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, options
 }

@@ -2,8 +2,8 @@ package asset
 
 import (
 	"database/sql"
-    "testing"
-    "time"
+	"testing"
+	"time"
 
 	"samuellando.com/internal/db"
 	"samuellando.com/internal/testutil"
@@ -19,9 +19,9 @@ func setup() (Store, *sql.DB) {
 		panic(err)
 	}
 	if err := db.ApplyMigrations(con, func(o *db.Options) {
-        o.MigrationsDir = migrations
-        o.Logger = testutil.CreateDiscardLogger()
-    }); err != nil {
+		o.MigrationsDir = migrations
+		o.Logger = testutil.CreateDiscardLogger()
+	}); err != nil {
 		panic(err)
 	}
 	return CreateStore(con), con

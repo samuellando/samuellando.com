@@ -161,11 +161,11 @@ func getGithubProjects(url string, db *sql.DB) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("Failed to read response body : %s", err)
 		}
-        return bytes, nil
+		return bytes, nil
 	}, func(o *cache.CacheOptions) {
-       o.MaxAge = 5 * time.Minute
-       o.Db = db
-    })
+		o.MaxAge = 5 * time.Minute
+		o.Db = db
+	})
 	return cachedFunc()
 }
 

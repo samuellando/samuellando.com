@@ -37,8 +37,8 @@ The cache key is derived from the function's name.
 opts allows customization of cache options such as MaxAge and Db.
 */
 func Cached(f func() ([]byte, error), opts ...func(*CacheOptions)) func() ([]byte, error) {
-    // In memory local instance cache, so we don't hit the db with every request.
-    cache := make(map[string]cacheElement)
+	// In memory local instance cache, so we don't hit the db with every request.
+	cache := make(map[string]cacheElement)
 	o := CacheOptions{
 		MaxAge: time.Hour,
 	}
@@ -62,11 +62,11 @@ func Cached(f func() ([]byte, error), opts ...func(*CacheOptions)) func() ([]byt
 			// Miss, check the external cache.
 			elem, err := dbCacheGet(key, options)
 			if err == nil {
-                cache[key] = elem
+				cache[key] = elem
 				return elem.value, nil
 			}
 			log.Println("Cache miss")
-            data, err := f()
+			data, err := f()
 			elem = cacheElement{validTo: time.Now().Add(options.MaxAge), value: data}
 			dbCacheUpdate(key, elem, options)
 			cache[key] = elem
@@ -96,7 +96,7 @@ func dbCacheGet(key string, options CacheOptions) (cacheElement, error) {
 		}
 		if time.Since(validto) <= 0 {
 			log.Println("External cache hit", time.Since(validto))
-            return cacheElement{value: value, validTo: validto}, nil
+			return cacheElement{value: value, validTo: validto}, nil
 		}
 		return cacheElement{}, fmt.Errorf("db cache miss")
 	} else {

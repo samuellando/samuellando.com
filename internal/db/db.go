@@ -14,8 +14,8 @@ import (
 
 // Options that can be provided to [Connect()]
 type Options struct {
-	RetrySecs     int    // How many secounds to wait before retrying a failed connection (default: 10)
-	MigrationsDir string // The directory to look for migraitons (default: "./migrations")
+	RetrySecs     int         // How many secounds to wait before retrying a failed connection (default: 10)
+	MigrationsDir string      // The directory to look for migraitons (default: "./migrations")
 	Logger        *log.Logger // To override the default logger
 }
 
@@ -48,7 +48,7 @@ func connect(dbType, info string, opts ...Option) *sql.DB {
 	options := Options{
 		RetrySecs:     10,
 		MigrationsDir: "./migrations",
-        Logger: log.Default(),
+		Logger:        log.Default(),
 	}
 
 	for _, opt := range opts {

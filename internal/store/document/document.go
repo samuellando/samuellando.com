@@ -48,12 +48,12 @@ func (d *Document) Content() (string, error) {
 }
 
 func (d *Document) Html() (template.HTML, error) {
-    content, err := d.Content() 
-    if err != nil {
-        return "", err
-    }
-    return markdown.ToHtml(content)
-} 
+	content, err := d.Content()
+	if err != nil {
+		return "", err
+	}
+	return markdown.ToHtml(content)
+}
 
 func (d *Document) Tags() []string {
 	return copyOf(d.fields.Tags)
@@ -85,25 +85,25 @@ func CreateProto(setters ...func(*DocumentFeilds)) *Document {
 
 // Update a document
 //
-// This does not work for proto documents
+// # This does not work for proto documents
 //
 // everything is deep copied, and rolled back in case of an error
 func (d *Document) Update(setters ...func(*DocumentFeilds)) error {
 	if d.db == nil {
 		return fmt.Errorf("Cannot update a proto document")
 	}
-    original := d.fields
+	original := d.fields
 	c := d.fields
-    c.Tags = copyOf(c.Tags)
+	c.Tags = copyOf(c.Tags)
 	for _, set := range setters {
 		set(&c)
 	}
 	// Make a copy of everything
 	d.fields = c
 	d.fields.Tags = copyOf(c.Tags)
-    if d.fields.Content != "" {
-        d.loaded = true
-    }
+	if d.fields.Content != "" {
+		d.loaded = true
+	}
 	// and update in the db
 	tx, err := d.db.Begin()
 	if err != nil {
@@ -189,11 +189,10 @@ func copyOf(src []string) []string {
 }
 
 func (d *Document) ToString() string {
-    content, err := d.Content()
-    if err != nil {
-        content = ""
-    }
-    s := d.Title() + "\n" +  content
-    return s
+	content, err := d.Content()
+	if err != nil {
+		content = ""
+	}
+	s := d.Title() + "\n" + content
+	return s
 }
-

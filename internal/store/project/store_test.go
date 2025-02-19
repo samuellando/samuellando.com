@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"samuellando.com/internal/db"
+	"samuellando.com/internal/testutil"
 	"strings"
 	"testing"
-	"samuellando.com/internal/testutil"
-	"samuellando.com/internal/db"
 )
 
 func setup() (Store, *httptest.Server, *sql.DB) {
@@ -21,15 +21,15 @@ func setup() (Store, *httptest.Server, *sql.DB) {
 		panic(err)
 	}
 	if err := db.ApplyMigrations(con, func(o *db.Options) {
-        o.MigrationsDir = migrations
-        o.Logger = testutil.CreateDiscardLogger()
-    }); err != nil {
+		o.MigrationsDir = migrations
+		o.Logger = testutil.CreateDiscardLogger()
+	}); err != nil {
 		panic(err)
 	}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data, err := os.ReadFile("testData/sample.json")
 		if err != nil {
-            panic(err)
+			panic(err)
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write(data)
@@ -42,12 +42,12 @@ func setup() (Store, *httptest.Server, *sql.DB) {
 
 func teardown(ts *httptest.Server, db *sql.DB) {
 	ts.Close()
-    db.Close()
+	db.Close()
 }
 
 func TestGetByIdBase(t *testing.T) {
-	ps, ts ,db := setup()
-	defer teardown(ts,db)
+	ps, ts, db := setup()
+	defer teardown(ts, db)
 	doc, _ := ps.GetById(1296269)
 	if doc.Title() != "Hello-World" {
 		t.Fatal("Ttitle does not match")
@@ -55,7 +55,7 @@ func TestGetByIdBase(t *testing.T) {
 }
 
 func TestGetAllBase(t *testing.T) {
-	ps, ts ,db := setup()
+	ps, ts, db := setup()
 	defer teardown(ts, db)
 	projects, _ := ps.GetAll()
 	if len(projects) != 4 {
@@ -64,7 +64,7 @@ func TestGetAllBase(t *testing.T) {
 }
 
 func TestFilter(t *testing.T) {
-	ps, ts ,db := setup()
+	ps, ts, db := setup()
 	defer teardown(ts, db)
 	filtered := ps.Filter(func(d *Project) bool {
 		return strings.HasSuffix(d.Title(), "two")
@@ -76,7 +76,7 @@ func TestFilter(t *testing.T) {
 }
 
 func TestGetIdFiltered(t *testing.T) {
-	ps, ts ,db := setup()
+	ps, ts, db := setup()
 	defer teardown(ts, db)
 	filtered := ps.Filter(func(d *Project) bool {
 		return strings.HasSuffix(d.Title(), "two")
@@ -95,7 +95,7 @@ func TestGetIdFiltered(t *testing.T) {
 }
 
 func TestSort(t *testing.T) {
-	ps, ts ,db := setup()
+	ps, ts, db := setup()
 	defer teardown(ts, db)
 	sorted := ps.Sort(func(a, b *Project) bool {
 		return a.Id() < b.Id()
@@ -112,7 +112,7 @@ func TestSort(t *testing.T) {
 }
 
 func TestGroup(t *testing.T) {
-	ps, ts ,db := setup()
+	ps, ts, db := setup()
 	defer teardown(ts, db)
 	groups := ps.Group(func(d *Project) string {
 		return string(d.Title()[0])
@@ -130,92 +130,92 @@ func TestGroup(t *testing.T) {
 }
 
 func TestStack(t *testing.T) {
-	ps, ts ,db := setup()
+	ps, ts, db := setup()
 	defer teardown(ts, db)
 	g, _ := ps.Sort(func(a, b *Project) bool {
 		return a.Id() < b.Id()
 	}).Group(func(p *Project) string {
-        return strings.Split(p.Title(), "-")[0]
-    }).Get("Bye")
-    res, _ := g.Filter(func(p *Project) bool {
-        return strings.HasSuffix(p.Title(), "two")
-    }).GetAll()
-    if res[0].Title() != "Bye-World-two" {
-        t.Fatal("Wrong element")
-    }
+		return strings.Split(p.Title(), "-")[0]
+	}).Get("Bye")
+	res, _ := g.Filter(func(p *Project) bool {
+		return strings.HasSuffix(p.Title(), "two")
+	}).GetAll()
+	if res[0].Title() != "Bye-World-two" {
+		t.Fatal("Wrong element")
+	}
 }
 
 func TestGetDesc(t *testing.T) {
-	ps, ts ,db := setup()
+	ps, ts, db := setup()
 	defer teardown(ts, db)
-    id := 1296269
+	id := 1296269
 	doc, _ := ps.GetById(id)
-    if doc.Title() != "Hello-World" {
-        t.Fatal("Wrong Title")
-    }
-    if doc.Description() != "This your first repo!" {
-        t.Fatalf("Wrong desc %s", doc.Description())
-    }
-    query := `
+	if doc.Title() != "Hello-World" {
+		t.Fatal("Wrong Title")
+	}
+	if doc.Description() != "This your first repo!" {
+		t.Fatalf("Wrong desc %s", doc.Description())
+	}
+	query := `
     UPDATE project
     SET description = $2
     WHERE id = $1;`
-    _, err := db.Exec(query, id, "And your Last!")
-    if err != nil {
-        t.Fatal(err)
-    }
+	_, err := db.Exec(query, id, "And your Last!")
+	if err != nil {
+		t.Fatal(err)
+	}
 	doc, _ = ps.GetById(id)
-    if doc.Description() != "And your Last!" {
-        t.Fatalf("Wrong desc %s", doc.Description())
-    }
+	if doc.Description() != "And your Last!" {
+		t.Fatalf("Wrong desc %s", doc.Description())
+	}
 }
 
 func TestGetTags(t *testing.T) {
-	ps, ts ,db := setup()
+	ps, ts, db := setup()
 	defer teardown(ts, db)
-    id := 1296269
+	id := 1296269
 	doc, _ := ps.GetById(id)
-    if doc.Title() != "Hello-World" {
-        t.Fatal("Wrong Title")
-    }
-    if doc.Description() != "This your first repo!" {
-        t.Fatalf("Wrong desc %s", doc.Description())
-    }
-    var id1 int
-    var id2 int
-    query := `
+	if doc.Title() != "Hello-World" {
+		t.Fatal("Wrong Title")
+	}
+	if doc.Description() != "This your first repo!" {
+		t.Fatalf("Wrong desc %s", doc.Description())
+	}
+	var id1 int
+	var id2 int
+	query := `
     INSERT INTO tag (value) VALUES ('one')
     RETURNING id;
     `
-    row := db.QueryRow(query)
-    err := row.Scan(&id1)
-    if err != nil {
-        t.Fatal(err)
-    }
-    query = `
+	row := db.QueryRow(query)
+	err := row.Scan(&id1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	query = `
     INSERT INTO tag (value) VALUES ('two')
     RETURNING id;
     `
-    row = db.QueryRow(query)
-    err = row.Scan(&id2)
-    if err != nil {
-        t.Fatal(err)
-    }
-    query = `
+	row = db.QueryRow(query)
+	err = row.Scan(&id2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	query = `
     INSERT INTO project_tag (tag, project) VALUES ($2, $1), ($3, $1);
     `
-    _, err = db.Exec(query, id, id1, id2)
-    if err != nil {
-        t.Fatal(err)
-    }
+	_, err = db.Exec(query, id, id1, id2)
+	if err != nil {
+		t.Fatal(err)
+	}
 	doc, _ = ps.GetById(id)
-    if len(doc.Tags()) != 2 {
-        t.Fatal("Wrong number of tags")
-    }
-    if doc.Tags()[0] != "one" {
-        t.Fatal("Wrong tag value")
-    }
-    if doc.Tags()[1] != "two" {
-        t.Fatal("Wrong tag value")
-    }
+	if len(doc.Tags()) != 2 {
+		t.Fatal("Wrong number of tags")
+	}
+	if doc.Tags()[0] != "one" {
+		t.Fatal("Wrong tag value")
+	}
+	if doc.Tags()[1] != "two" {
+		t.Fatal("Wrong tag value")
+	}
 }

@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lib/pq"
 	"samuellando.com/internal/db"
 	"samuellando.com/internal/testutil"
-	"github.com/lib/pq"
 )
 
 func setup() (Store, *sql.DB) {
@@ -21,9 +21,9 @@ func setup() (Store, *sql.DB) {
 		panic(err)
 	}
 	if err := db.ApplyMigrations(con, func(o *db.Options) {
-        o.MigrationsDir = migrations
-        o.Logger = testutil.CreateDiscardLogger()
-    }); err != nil {
+		o.MigrationsDir = migrations
+		o.Logger = testutil.CreateDiscardLogger()
+	}); err != nil {
 		panic(err)
 	}
 	return CreateStore(con), con
@@ -91,13 +91,13 @@ func TestGetAllUpdates(t *testing.T) {
 func TestAdd(t *testing.T) {
 	ds, db := setup()
 	defer teardown(ds)
-    start := time.Now()
-    ds.Add(CreateProto(func(df *DocumentFeilds) {
-        df.Title = "Test doc"
-        df.Content = "Test content"
-        df.Tags = []string{"one", "two"}
-        df.Created = start
-    }))
+	start := time.Now()
+	ds.Add(CreateProto(func(df *DocumentFeilds) {
+		df.Title = "Test doc"
+		df.Content = "Test content"
+		df.Tags = []string{"one", "two"}
+		df.Created = start
+	}))
 	query := `
     SELECT 
     d.id AS document_id, 
@@ -114,50 +114,49 @@ func TestAdd(t *testing.T) {
     GROUP BY d.id, d.title, d.created
     ORDER BY d.created DESC;
     `
-    row := db.QueryRow(query)
-    var id int
-    var title string
-    var content string
-    var created time.Time
-    var tags []sql.NullString
-    err := row.Scan(&id, &title, &content, &created, pq.Array(&tags))
-    if err != nil {
-        t.Error(err)
-    }
-    if title != "Test doc" {
-        t.Error("Wrong title")
-    }
-    if content != "Test content" {
-        t.Error("Wrong content")
-    }
-    if len(tags) != 2 {
-        t.Error("Wrong tag count")
-    }
-    if tags[0].String != "one" || tags[1].String != "two" {
-        t.Error("Wrong tags")
-    }
+	row := db.QueryRow(query)
+	var id int
+	var title string
+	var content string
+	var created time.Time
+	var tags []sql.NullString
+	err := row.Scan(&id, &title, &content, &created, pq.Array(&tags))
+	if err != nil {
+		t.Error(err)
+	}
+	if title != "Test doc" {
+		t.Error("Wrong title")
+	}
+	if content != "Test content" {
+		t.Error("Wrong content")
+	}
+	if len(tags) != 2 {
+		t.Error("Wrong tag count")
+	}
+	if tags[0].String != "one" || tags[1].String != "two" {
+		t.Error("Wrong tags")
+	}
 }
 
 func TestRemove(t *testing.T) {
 	ds, db := setup()
 	defer teardown(ds)
-    addDocument(db, "test")
-    data, err := ds.GetAll()
-    if err != nil {
-        t.Error(err)
-    }
-    err = ds.Remove(data[0])
-    if err != nil {
-        t.Error(err)
-    }
-    row := db.QueryRow("SELECT count(*) FROM document;")
-    var count int
-    row.Scan(&count)
-    if count > 0 {
-        t.Error("Should be empty")
-    }
+	addDocument(db, "test")
+	data, err := ds.GetAll()
+	if err != nil {
+		t.Error(err)
+	}
+	err = ds.Remove(data[0])
+	if err != nil {
+		t.Error(err)
+	}
+	row := db.QueryRow("SELECT count(*) FROM document;")
+	var count int
+	row.Scan(&count)
+	if count > 0 {
+		t.Error("Should be empty")
+	}
 }
-
 
 func TestFilter(t *testing.T) {
 	ds, db := setup()
@@ -262,21 +261,21 @@ func TestStack(t *testing.T) {
 	group, _ := ds.Sort(func(a, b *Document) bool {
 		return strings.Compare(a.Title(), b.Title()) < 0
 	}).Group(func(p *Document) string {
-        return string(p.Title()[0])
-    }).Get("h")
-    res, _ := group.Filter(func(p *Document) bool {
-        return !strings.HasSuffix(p.Title(), "b")
-    }).GetAll()
-    if res[0].Title() != "haa" {
-        t.Fatalf("Wrong element %s", res[0].Title())
-    }
-    if res[1].Title() != "haa" {
-        t.Fatal("Wrong element")
-    }
-    if res[2].Title() != "hc" {
-        t.Fatal("Wrong element")
-    }
-    if res[3].Title() != "hc" {
-        t.Fatal("Wrong element")
-    }
+		return string(p.Title()[0])
+	}).Get("h")
+	res, _ := group.Filter(func(p *Document) bool {
+		return !strings.HasSuffix(p.Title(), "b")
+	}).GetAll()
+	if res[0].Title() != "haa" {
+		t.Fatalf("Wrong element %s", res[0].Title())
+	}
+	if res[1].Title() != "haa" {
+		t.Fatal("Wrong element")
+	}
+	if res[2].Title() != "hc" {
+		t.Fatal("Wrong element")
+	}
+	if res[3].Title() != "hc" {
+		t.Fatal("Wrong element")
+	}
 }

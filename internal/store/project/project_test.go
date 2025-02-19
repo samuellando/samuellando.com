@@ -12,13 +12,13 @@ func TestUpdate(t *testing.T) {
 	defer teardown(ts, db)
 	doc, _ := ps.GetById(1296269)
 	arr := []string{"one", "test"}
-    err := doc.Update(func(pf *ProjectFields) {
+	err := doc.Update(func(pf *ProjectFields) {
 		pf.Description = "Testing"
 		pf.Tags = arr
 	})
-    if err != nil {
-        t.Fatal(err)
-    }
+	if err != nil {
+		t.Fatal(err)
+	}
 	if doc.Description() != "Testing" {
 		t.Fatal("Desc should be updated in the object")
 	}

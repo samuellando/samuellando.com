@@ -1,9 +1,9 @@
 package main
 
 import (
+	"image/color"
 	"math"
 	"time"
-    "image/color"
 
 	"github.com/tdewolff/canvas"
 )
@@ -11,14 +11,14 @@ import (
 type planet struct {
 	x      float64
 	y      float64
-	radPS    float64
+	radPS  float64
 	radius float64
 	arcs   []*arc
-    color  color.Color
-    aplha  int
+	color  color.Color
+	aplha  int
 
-    // Internal kpis
-    last time.Time
+	// Internal kpis
+	last time.Time
 }
 
 type arc struct {
@@ -39,30 +39,30 @@ func ceratePlanet(x, y, radius, radPS float64, nArcs int, color color.Color) *pl
 		y:      y,
 		arcs:   arcs,
 		radius: radius,
-		radPS:    radPS,
-        last: time.Now(),
-        color: color,
-        aplha: 13,
+		radPS:  radPS,
+		last:   time.Now(),
+		color:  color,
+		aplha:  13,
 	}
 }
 
 func (p *planet) draw(ctx *canvas.Context) {
-    ctx.Push()
-    ctx.SetStrokeColor(p.color)
-    r, g, b, _ := p.color.RGBA()
-    ctx.SetFill(color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: uint8(p.aplha)})
+	ctx.Push()
+	ctx.SetStrokeColor(p.color)
+	r, g, b, _ := p.color.RGBA()
+	ctx.SetFill(color.RGBA{R: uint8(r), G: uint8(g), B: uint8(b), A: uint8(p.aplha)})
 	for _, arc := range p.arcs {
 		ctx.DrawPath(p.x, p.y, arc.getPath())
-        p.spin()
+		p.spin()
 	}
-    ctx.Pop()
+	ctx.Pop()
 }
 
 func (p *planet) spin() {
-    elapsed := float64(time.Since(p.last)) / float64(time.Second)
-    p.last = time.Now()
-    rad := p.radPS * float64(elapsed)
-    p.rotate(rad)
+	elapsed := float64(time.Since(p.last)) / float64(time.Second)
+	p.last = time.Now()
+	rad := p.radPS * float64(elapsed)
+	p.rotate(rad)
 }
 
 func (p *planet) rotate(r float64) {

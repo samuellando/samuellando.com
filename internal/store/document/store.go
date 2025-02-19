@@ -29,7 +29,7 @@ func createErrorStore(err error) *Store {
 
 func (ds *Store) New(data []*Document) store.Store[*Document] {
 	return &Store{db: ds.db, run: func() ([]*Document, error) {
-        return data, nil
+		return data, nil
 	}}
 }
 
@@ -117,54 +117,54 @@ func (ds *Store) Remove(d *Document) error {
 }
 
 func (ds *Store) Filter(f func(*Document) bool) store.Store[*Document] {
-    n, err := store.Filter(ds, f)
-    if err != nil {
-        return createErrorStore(err)
-    }
-    return n
+	n, err := store.Filter(ds, f)
+	if err != nil {
+		return createErrorStore(err)
+	}
+	return n
 }
 
 func (ds *Store) Group(f func(*Document) string) *datatypes.OrderedMap[string, store.Store[*Document]] {
-    m, err := store.Group(ds, f)
-    if err != nil {
-        m := datatypes.NewOrderedMap[string, store.Store[*Document]]()
-        m.Set("", createErrorStore(err))
-        return m
-    }
-    return m
+	m, err := store.Group(ds, f)
+	if err != nil {
+		m := datatypes.NewOrderedMap[string, store.Store[*Document]]()
+		m.Set("", createErrorStore(err))
+		return m
+	}
+	return m
 }
 
 func (ds *Store) Sort(f func(*Document, *Document) bool) store.Store[*Document] {
-    n, err := store.Sort(ds, f)
-    if err != nil {
-        return createErrorStore(err)
-    }
-    return n
+	n, err := store.Sort(ds, f)
+	if err != nil {
+		return createErrorStore(err)
+	}
+	return n
 }
 
 func (ds *Store) AllTags() []string {
-    query := `
+	query := `
     SELECT
         t.value
     FROM tag t
     LEFT JOIN document_tag dt ON dt.tag = t.id
     WHERE dt.document is not Null;
     `
-    rows, err := ds.db.Query(query)
-    if err != nil {
-        return []string{}
-    }
-    tags := make([]string, 0)
-    for rows.Next() {
-        var value string
-        rows.Scan(&value)
-        tags = append(tags, value)
-    }
-    return tags
+	rows, err := ds.db.Query(query)
+	if err != nil {
+		return []string{}
+	}
+	tags := make([]string, 0)
+	for rows.Next() {
+		var value string
+		rows.Scan(&value)
+		tags = append(tags, value)
+	}
+	return tags
 }
 
 func (ds *Store) AllSharedTags(tag string) []string {
-    query := `
+	query := `
     SELECT
         t2.value
     FROM document d
@@ -174,17 +174,17 @@ func (ds *Store) AllSharedTags(tag string) []string {
     JOIN tag t2 ON t2.id = dt2.tag
     WHERE t1.value = $1 and t2.value <> $1;
     `
-    rows, err := ds.db.Query(query, tag)
-    if err != nil {
-        return []string{}
-    }
-    tags := make([]string, 0)
-    for rows.Next() {
-        var value string
-        rows.Scan(&value)
-        tags = append(tags, value)
-    }
-    return tags
+	rows, err := ds.db.Query(query, tag)
+	if err != nil {
+		return []string{}
+	}
+	tags := make([]string, 0)
+	for rows.Next() {
+		var value string
+		rows.Scan(&value)
+		tags = append(tags, value)
+	}
+	return tags
 }
 
 func queryDocuments(db *sql.DB, filter string, args ...any) ([]*Document, error) {

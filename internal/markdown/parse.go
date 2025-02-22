@@ -2,16 +2,17 @@ package markdown
 
 import (
 	"fmt"
-	"html/template"
 	"io"
 	"strings"
 
 	"github.com/samuellando/gositter"
+    "samuellando.com/internal/template"
+    gotemp "html/template"
 )
 
-var COMPOENTS, _ = template.New("components").ParseGlob("./templates/components/*")
+var COMPONENTS = template.New("components").ParseTemplates("templates/markdown_components")
 
-func ToHtml(md string) (template.HTML, error) {
+func ToHtml(md string) (gotemp.HTML, error) {
 	tree, err := G.Parse(md)
 	if err != nil {
 		return "", err
@@ -21,7 +22,7 @@ func ToHtml(md string) (template.HTML, error) {
 
 type a struct {
 	Href  string
-	Inner template.HTML
+	Inner gotemp.HTML
 }
 
 type img struct {
@@ -32,7 +33,7 @@ type img struct {
 }
 
 type list struct {
-	Lis []template.HTML
+	Lis []gotemp.HTML
 }
 
 func parseTags(out io.Writer, t gositter.SyntaxTree) error {
@@ -68,12 +69,12 @@ func parseTags(out io.Writer, t gositter.SyntaxTree) error {
 		sub := t.Nodes()[0]
 		data, err = parseTree(sub)
 	case "a":
-		var inner template.HTML
+		var inner gotemp.HTML
 		ht := t.Find("href")[0]
 		imgs := t.Find("img")
 		if len(imgs) == 0 {
 			at := t.Find("alt")[0]
-			inner = template.HTML(at.Value())
+			inner = gotemp.HTML(at.Value())
 		} else {
 			inner, err = parseTree(imgs[0])
 		}
@@ -95,7 +96,7 @@ func parseTags(out io.Writer, t gositter.SyntaxTree) error {
 	case "ul", "ol":
 		lis := t.Find("li")
 		list := new(list)
-		var inner template.HTML
+		var inner gotemp.HTML
 		for _, li := range lis {
 			inner, err = parseTree(li)
 			if err != nil {
@@ -119,11 +120,11 @@ func parseTags(out io.Writer, t gositter.SyntaxTree) error {
 	if err != nil {
 		return err
 	}
-	return COMPOENTS.ExecuteTemplate(out, tag, data)
+	return COMPONENTS.ExecuteTemplate(out, tag, data)
 }
 
-func parseTree(t gositter.SyntaxTree) (template.HTML, error) {
+func parseTree(t gositter.SyntaxTree) (gotemp.HTML, error) {
 	s := new(strings.Builder)
 	err := parseTags(s, t)
-	return template.HTML(s.String()), err
+	return gotemp.HTML(s.String()), err
 }

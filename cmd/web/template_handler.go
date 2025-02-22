@@ -3,27 +3,30 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"html/template"
 	"io"
 	"log"
 	"net/http"
+	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"samuellando.com/internal/auth"
 	"samuellando.com/internal/datatypes"
 	"samuellando.com/internal/store"
+	"samuellando.com/internal/store/asset"
 	"samuellando.com/internal/store/document"
 	"samuellando.com/internal/store/project"
+	"samuellando.com/internal/template"
 )
 
 type context struct {
 	ProjectStore          *project.Store
 	ProjectGroups         *datatypes.OrderedMap[string, store.Store[*project.Project]]
 	DocumentStore         *document.Store
+	AssetStore            *asset.Store
 	Page                  string
-	Document              *document.Document
-	Project               *project.Project
+	Reference             int
 	Admin                 bool
 	Req                   *http.Request
 	ProjectSortFunctions  map[string]sortFunctionReference[*project.Project]
@@ -34,61 +37,30 @@ type context struct {
 
 func getPathContext(req *http.Request) (string, string, bool) {
 	path := req.URL.Path
-	var page string
-	var ref string
-	if path == "/" {
-		page = "index"
-	} else {
-		page = req.PathValue("template")
-		ref = req.PathValue("document")
-	}
-	return page, ref, auth.IsAuthenticated(req)
+	parts := strings.Split(path, "/")
+	ref := parts[len(parts)-1]
+	return path, ref, auth.IsAuthenticated(req)
 }
 
 type templateHandler struct {
 	templates     template.Template
 	DocumentStore document.Store
 	ProjectStore  project.Store
+	AssetStore    asset.Store
 }
 
 func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	page, ref, admin := getPathContext(req)
-	var doc *document.Document
-	var proj *project.Project
-	switch page {
-	case "project":
-		if ref != "" {
-			projectId, err := strconv.Atoi(ref)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(400), "project reference must be numeric"), 400)
-				return
-			}
-			proj, err = h.ProjectStore.GetById(projectId)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(404), "project not found"), 404)
-				return
-			}
-		}
-	default:
-		if ref != "" {
-			documentId, err := strconv.Atoi(ref)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(400), "document reference must be numeric"), 400)
-				return
-			}
-			doc, err = h.DocumentStore.GetById(documentId)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(404), "document not found"), 404)
-				return
-			}
-		}
+	id, err := strconv.Atoi(ref)
+	if err != nil {
+		id = -1
 	}
 	ctxt := &context{
 		DocumentStore:         &h.DocumentStore,
 		ProjectStore:          &h.ProjectStore,
+		AssetStore:            &h.AssetStore,
+		Reference:             id,
 		Page:                  page,
-		Document:              doc,
-		Project:               proj,
 		Admin:                 admin,
 		Req:                   req,
 		ProjectSortFunctions:  PROJECT_SORT_FUNCTIONS,
@@ -104,7 +76,7 @@ func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			h.getTemplate(ctxt, w, req)
 		}
 	case "POST":
-		h.createDocument(w, req)
+		h.createDocument(ctxt, w, req)
 	case "PUT":
 		h.update(ctxt, w, req)
 	case "DELETE":
@@ -112,13 +84,36 @@ func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *templateHandler) getTemplate(ctxt *context, w http.ResponseWriter, req *http.Request) {
-	// Check that the template exists
-	if h.templates.Lookup(ctxt.Page) == nil {
-		http.NotFound(w, req)
-		return
+func (ctxt *context) GetDocument() *document.Document {
+	ds := ctxt.DocumentStore
+	doc, err := ds.GetById(ctxt.Reference)
+	if err != nil {
+		return nil
 	}
-	err := h.templates.ExecuteTemplate(w, ctxt.Page, ctxt)
+	return doc
+}
+
+func (ctxt *context) GetProject() *project.Project {
+	ps := ctxt.ProjectStore
+	proj, err := ps.GetById(ctxt.Reference)
+	if err != nil {
+		return nil
+	}
+	return proj
+}
+
+func (h *templateHandler) getTemplate(ctxt *context, w http.ResponseWriter, req *http.Request) {
+	template := path.Join("pages", ctxt.Page)
+	// Check that the template exists
+	if h.templates.Lookup(template) == nil {
+		// Check for a slug
+		template = filepath.Dir(template) + "/[slug]"
+		if h.templates.Lookup(template) == nil {
+			http.NotFound(w, req)
+			return
+		}
+	}
+	err := h.templates.ExecuteTemplate(w, template, ctxt)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
@@ -126,11 +121,12 @@ func (h *templateHandler) getTemplate(ctxt *context, w http.ResponseWriter, req 
 }
 
 func (h *templateHandler) downloadDocument(ctxt *context, w http.ResponseWriter, req *http.Request) {
-	filename := fmt.Sprintf("%s.md", ctxt.Document.Title())
+	doc := ctxt.GetDocument()
+	filename := fmt.Sprintf("%s.md", doc.Title())
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	w.Header().Set("Content-Type", "text/markdown")
 	w.WriteHeader(http.StatusOK)
-	content, err := ctxt.Document.Content()
+	content, err := doc.Content()
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
 	}
@@ -140,7 +136,7 @@ func (h *templateHandler) downloadDocument(ctxt *context, w http.ResponseWriter,
 	}
 }
 
-func (h *templateHandler) createDocument(w http.ResponseWriter, req *http.Request) {
+func (h *templateHandler) createDocument(ctxt *context, w http.ResponseWriter, req *http.Request) {
 	title := req.PostFormValue("title")
 	content := req.PostFormValue("content")
 	tags := strings.Split(req.PostFormValue("tags"), ",")
@@ -155,7 +151,7 @@ func (h *templateHandler) createDocument(w http.ResponseWriter, req *http.Reques
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
 		return
 	}
-	http.Redirect(w, req, fmt.Sprintf("/all/%d", doc.Id()), 303)
+	http.Redirect(w, req, fmt.Sprintf("%s/%d", ctxt.Page, doc.Id()), 303)
 }
 
 func (h *templateHandler) update(ctxt *context, w http.ResponseWriter, req *http.Request) {
@@ -168,9 +164,10 @@ func (h *templateHandler) update(ctxt *context, w http.ResponseWriter, req *http
 }
 
 func (h *templateHandler) updateProject(ctxt *context, w http.ResponseWriter, req *http.Request) {
+	proj := ctxt.GetProject()
 	desc := req.PostFormValue("description")
 	tags := strings.Split(req.PostFormValue("tags"), ",")
-	err := ctxt.Project.Update(func(pf *project.ProjectFields) {
+	err := proj.Update(func(pf *project.ProjectFields) {
 		pf.Description = desc
 		pf.Tags = tags
 	})
@@ -180,7 +177,7 @@ func (h *templateHandler) updateProject(ctxt *context, w http.ResponseWriter, re
 		return
 	}
 	// And return the updated document
-	err = h.templates.ExecuteTemplate(w, "project-li", []any{ctxt.Project, ctxt})
+	err = h.templates.ExecuteTemplate(w, "project-li", []any{proj, ctxt})
 	if err != nil {
 		log.Println(err)
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
@@ -189,6 +186,7 @@ func (h *templateHandler) updateProject(ctxt *context, w http.ResponseWriter, re
 }
 
 func (h *templateHandler) updateDocument(ctxt *context, w http.ResponseWriter, req *http.Request) {
+	doc := ctxt.GetDocument()
 	title := req.PostFormValue("title")
 	tags := strings.Split(req.PostFormValue("tags"), ",")
 	content, err, err_code := getUploadContent(req)
@@ -200,7 +198,7 @@ func (h *templateHandler) updateDocument(ctxt *context, w http.ResponseWriter, r
 	if content == "" {
 		content = req.PostFormValue("content")
 	}
-	err = ctxt.Document.Update(func(df *document.DocumentFeilds) {
+	err = doc.Update(func(df *document.DocumentFeilds) {
 		df.Title = title
 		df.Content = content
 		df.Tags = tags
@@ -211,7 +209,7 @@ func (h *templateHandler) updateDocument(ctxt *context, w http.ResponseWriter, r
 		return
 	}
 	// And return the updated document
-	err = h.templates.ExecuteTemplate(w, "document", ctxt.Document)
+	err = h.templates.ExecuteTemplate(w, "document", doc)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
@@ -220,7 +218,7 @@ func (h *templateHandler) updateDocument(ctxt *context, w http.ResponseWriter, r
 }
 
 func (h *templateHandler) deleteDocument(ctxt *context, w http.ResponseWriter, req *http.Request) {
-	err := h.DocumentStore.Remove(ctxt.Document)
+	err := h.DocumentStore.Remove(ctxt.GetDocument())
 	// Failed to delete
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)

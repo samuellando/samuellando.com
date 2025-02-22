@@ -1,0 +1,24 @@
+{{template "edit" .}}
+<form hx-post="{{.Page}}" hx-target="body" hx-push-url="true">
+    <label>Title </label>
+    <input name="title" type="text" value="" /><br />
+    <label>Content </label>
+    <input name="content" type="text" value="" /><br />
+    <label>Tags </label>
+    <input name="tags" type="text" value='' /><br />
+    <button type="submit">Create</button>
+</form>
+<h2>Live Posts</h2>
+<form hx-get="?filter-out-tags=true" hx-trigger="input" hx-target="body" hx-push-url="true">
+    {{range .DocumentStore.AllSharedTags "writing"}}
+    <input type="checkbox" name="filter-tag" value="{{.}}" {{if or (eq $.FilterTags nil) (includes . $.FilterTags)}}
+        checked {{end}} /><label>{{.}}</label>
+    {{end}}
+</form>
+<button hx-get="?filter-out-tags=true" hx-push-url="true" hx-target="body">Uncheck All</button>
+<button hx-get="?" hx-push-url="true" hx-target="body">Check All</button>
+<ul>
+    {{range .DocumentStore.GetAll}}
+    <li><a href="{{$.Page}}/{{.Id}}">{{.Title}}</a></li>
+    {{end}}
+</ul>

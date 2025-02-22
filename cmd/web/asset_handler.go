@@ -3,11 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"html/template"
 	"io"
 	"net/http"
 
 	"samuellando.com/internal/store/asset"
+	"samuellando.com/internal/template"
 )
 
 type assetHandler struct {

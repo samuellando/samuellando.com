@@ -7,8 +7,8 @@ package document
 import (
 	"database/sql"
 	"fmt"
-	"html/template"
 	"time"
+    "html/template"
 
 	"samuellando.com/internal/markdown"
 )

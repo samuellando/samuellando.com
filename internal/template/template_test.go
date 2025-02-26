@@ -75,18 +75,18 @@ func TestParseTemplatesLayouts(t *testing.T) {
 		t.Error("Expected template 'dir/test' to be parsed")
 	}
 	w := new(strings.Builder)
-    err := tmpl.ExecuteTemplate(w, "dir/test/a/b", nil)
-    if err != nil {
-        t.Fatal(err)
-    }
+	err := tmpl.ExecuteTemplate(w, "dir/test/a/b", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if w.String() != "<html><h2>OK</h2><h1><a>Hello, World!</a></h1></html>" {
 		t.Fatal("Nesting should work", w.String())
 	}
 	w = new(strings.Builder)
-    err = tmpl.ExecuteTemplate(w, "component", nil)
-    if err != nil {
-        t.Fatal(err)
-    }
+	err = tmpl.ExecuteTemplate(w, "component", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if w.String() != "<a>Hello, World!</a>" {
 		t.Fatal("Components should not be affected by layout")
 	}
@@ -156,13 +156,13 @@ func TestLoadPageFileWithLayouts(t *testing.T) {
 	temps := New("test")
 	layouts := map[string]string{}
 	temps.loadLayoutFile(layouts, "parent/child/+layout.html", []byte("<body>{{slot}}</body>"))
-    temps.loadPageFile(layouts, "parent/child/+page.html", []byte("<h1>Hello</h1>"))
-    expected := "<body><h1>Hello</h1></body>"
-    w := new(strings.Builder)
-    err := temps.ExecuteTemplate(w, "parent/child", nil)
-    if err != nil {
-       t.Fatal(err)
-    }
+	temps.loadPageFile(layouts, "parent/child/+page.html", []byte("<h1>Hello</h1>"))
+	expected := "<body><h1>Hello</h1></body>"
+	w := new(strings.Builder)
+	err := temps.ExecuteTemplate(w, "parent/child", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if w.String() != expected {
 		t.Errorf("Expected layout to be %q, got %q", expected, w.String())
 	}
@@ -172,15 +172,15 @@ func TestLoadPageFileWithLayouts(t *testing.T) {
 func TestLoadPageFileWithoutLayout(t *testing.T) {
 	temps := New("test")
 	layouts := map[string]string{}
-    temps.loadPageFile(layouts, "parent/child/+page.html", []byte("<h1>Hello</h1>"))
-    expected := "<h1>Hello</h1>"
-    w := new(strings.Builder)
-    err := temps.ExecuteTemplate(w, "parent/child", nil)
-    if err != nil {
-       t.Fatal(err)
-    }
+	temps.loadPageFile(layouts, "parent/child/+page.html", []byte("<h1>Hello</h1>"))
+	expected := "<h1>Hello</h1>"
+	w := new(strings.Builder)
+	err := temps.ExecuteTemplate(w, "parent/child", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if w.String() != expected {
-        t.Fatal("Unexpected result", w.String())
+		t.Fatal("Unexpected result", w.String())
 	}
 }
 
@@ -189,47 +189,47 @@ func TestLoadComponentFileWithLayout(t *testing.T) {
 	temps := New("test")
 	layouts := map[string]string{}
 	temps.loadLayoutFile(layouts, "p/c/+layout.html", []byte("<body>{{slot}}</body>"))
-    temps.loadComponentFile("p/c/com.html", []byte("<h1>Hello</h1>"))
-    expected := "<h1>Hello</h1>"
-    w := new(strings.Builder)
-    err := temps.ExecuteTemplate(w, "com", nil)
-    if err != nil {
-       t.Fatal(err)
-    }
+	temps.loadComponentFile("p/c/com.html", []byte("<h1>Hello</h1>"))
+	expected := "<h1>Hello</h1>"
+	w := new(strings.Builder)
+	err := temps.ExecuteTemplate(w, "com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if w.String() != expected {
-        t.Fatal("Unexpected result", w.String())
+		t.Fatal("Unexpected result", w.String())
 	}
 }
 
 // Components should collide and throw error
 func TestLoadComponentFileCollisions(t *testing.T) {
 	temps := New("test")
-    temps.loadComponentFile("p/c/com.html", []byte("<h1>Hello</h1>"))
-    err := temps.loadComponentFile("p/c/com.html", []byte("<h1>Hello</h1>"))
-    if err == nil {
-       t.Fatal("Components should collide if they have the same name")
-    }
+	temps.loadComponentFile("p/c/com.html", []byte("<h1>Hello</h1>"))
+	err := temps.loadComponentFile("p/c/com.html", []byte("<h1>Hello</h1>"))
+	if err == nil {
+		t.Fatal("Components should collide if they have the same name")
+	}
 }
 
 func TestLoadTamplate(t *testing.T) {
 	temps := New("test")
-    temps.loadTemplate("a", "<h1>Hello</h1>")
-    w := new(strings.Builder)
-    expected := "<h1>Hello</h1>"
-    err := temps.ExecuteTemplate(w, "a", nil)
-    if err != nil {
-       t.Fatal(err)
-    }
+	temps.loadTemplate("a", "<h1>Hello</h1>")
+	w := new(strings.Builder)
+	expected := "<h1>Hello</h1>"
+	err := temps.ExecuteTemplate(w, "a", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if w.String() != expected {
-        t.Fatal("Unexpected result", w.String())
+		t.Fatal("Unexpected result", w.String())
 	}
 }
 
 func TestLoadTamplateCollision(t *testing.T) {
 	temps := New("test")
-    temps.loadTemplate("a", "<h1>Hello</h1>")
-    err := temps.loadTemplate("a", "<h1>Hello</h1>")
-    if  err == nil {
-        t.Fatal("Collisons should throw errors")
-    }
+	temps.loadTemplate("a", "<h1>Hello</h1>")
+	err := temps.loadTemplate("a", "<h1>Hello</h1>")
+	if err == nil {
+		t.Fatal("Collisons should throw errors")
+	}
 }

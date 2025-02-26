@@ -14,7 +14,7 @@ COPY . .
 
 # Build the app
 RUN go build -o goapp ./cmd/web
-RUN GOOS=js GOARCH=wasm go build -o static/main.wasm ./cmd/wasm
+RUN GOOS=js GOARCH=wasm go build -o static/main.wasm ./wasm
 
 FROM golang:1.23 as run
 

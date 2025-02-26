@@ -90,7 +90,7 @@ func (h *documentHandler) createDocument(w http.ResponseWriter, req *http.Reques
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
 		return
 	}
-    h.renderDocument(w, doc)
+	h.renderDocument(w, doc)
 }
 
 func (h *documentHandler) updateDocument(w http.ResponseWriter, req *http.Request) {
@@ -117,7 +117,7 @@ func (h *documentHandler) updateDocument(w http.ResponseWriter, req *http.Reques
 		return
 	}
 	// And return the updated document
-    h.renderDocument(w, doc)
+	h.renderDocument(w, doc)
 }
 
 func (h *documentHandler) deleteDocument(w http.ResponseWriter, req *http.Request) {

@@ -1,38 +1,12 @@
 package asset
 
 import (
-	"database/sql"
 	"testing"
-
-	"samuellando.com/internal/db"
-	"samuellando.com/internal/testutil"
 )
 
-func setupStore() (Store, *sql.DB) {
-	if err := testutil.ResetDb(); err != nil {
-		panic(err)
-	}
-	con := db.ConnectPostgres(testutil.GetDbCredentials())
-	migrations, err := testutil.GetMigrationsPath()
-	if err != nil {
-		panic(err)
-	}
-	if err := db.ApplyMigrations(con, func(o *db.Options) {
-		o.MigrationsDir = migrations
-		o.Logger = testutil.CreateDiscardLogger()
-	}); err != nil {
-		panic(err)
-	}
-	return CreateStore(con), con
-}
-
-func teardownStore(s Store) {
-	s.db.Close()
-}
-
 func TestStoreAdd(t *testing.T) {
-	store, _ := setupStore()
-	defer teardownStore(store)
+	store, _ := setup()
+	defer teardown(store)
 
 	asset := CreateProto(func(fields *AssetFields) {
 		fields.Name = "Test Asset"
@@ -50,8 +24,8 @@ func TestStoreAdd(t *testing.T) {
 }
 
 func TestStoreGetById(t *testing.T) {
-	store, _ := setupStore()
-	defer teardownStore(store)
+	store, _ := setup()
+	defer teardown(store)
 
 	asset := CreateProto(func(fields *AssetFields) {
 		fields.Name = "Test Asset"
@@ -74,8 +48,8 @@ func TestStoreGetById(t *testing.T) {
 }
 
 func TestStoreGetByName(t *testing.T) {
-	store, _ := setupStore()
-	defer teardownStore(store)
+	store, _ := setup()
+	defer teardown(store)
 
 	asset := CreateProto(func(fields *AssetFields) {
 		fields.Name = "Test Asset"
@@ -98,8 +72,8 @@ func TestStoreGetByName(t *testing.T) {
 }
 
 func TestStoreGetAll(t *testing.T) {
-	store, _ := setupStore()
-	defer teardownStore(store)
+	store, _ := setup()
+	defer teardown(store)
 
 	asset1 := CreateProto(func(fields *AssetFields) {
 		fields.Name = "Asset 1"
@@ -124,8 +98,8 @@ func TestStoreGetAll(t *testing.T) {
 }
 
 func TestStoreFilter(t *testing.T) {
-	store, _ := setupStore()
-	defer teardownStore(store)
+	store, _ := setup()
+	defer teardown(store)
 
 	asset1 := CreateProto(func(fields *AssetFields) {
 		fields.Name = "Asset 1"
@@ -154,8 +128,8 @@ func TestStoreFilter(t *testing.T) {
 }
 
 func TestStoreGroup(t *testing.T) {
-	store, _ := setupStore()
-	defer teardownStore(store)
+	store, _ := setup()
+	defer teardown(store)
 
 	asset1 := CreateProto(func(fields *AssetFields) {
 		fields.Name = "Asset 1"
@@ -179,8 +153,8 @@ func TestStoreGroup(t *testing.T) {
 }
 
 func TestStoreSort(t *testing.T) {
-	store, _ := setupStore()
-	defer teardownStore(store)
+	store, _ := setup()
+	defer teardown(store)
 
 	asset1 := CreateProto(func(fields *AssetFields) {
 		fields.Name = "Asset B"

@@ -2,6 +2,7 @@
 package testutil
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -22,21 +23,51 @@ func GetDbCredentials() (string, string, string, string, string, func(*db.Option
 	options := func(opts *db.Options) {
 		opts.RetrySecs = -1
 		opts.MigrationsDir = ""
-		opts.Logger = CreateDiscardLogger()
+		opts.Logger = createDiscardLogger()
 	}
 	return DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, options
 }
 
 // Empty the datasbase schema
-func ResetDb() error {
-	con := db.ConnectPostgres(GetDbCredentials())
-	defer con.Close()
-	_, err := con.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+func ResetDb(con *sql.DB, schema string) error {
+	err := clearSchema(con, schema)
+	if err != nil {
+		panic(err)
+	}
+	_, err = con.Exec(fmt.Sprintf("SET search_path TO %s;", schema))
+	if err != nil {
+		panic(err)
+	}
+	err = db.InitalizeMigrations(con)
+	migrations, err := getMigrationsPath()
+	if err != nil {
+		panic(err)
+	}
+	err = db.ApplyMigrations(con, func(o *db.Options) {
+		o.MigrationsDir = migrations
+	})
 	return err
 }
 
+func clearSchema(con *sql.DB, schema string) error {
+	tx, err := con.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	_, err = tx.Exec(fmt.Sprintf("DROP SCHEMA IF EXISTS %s CASCADE; CREATE SCHEMA %s;", schema, schema))
+	if err != nil {
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Resolves the ./migrations dir from the project root
-func GetMigrationsPath() (string, error) {
+func getMigrationsPath() (string, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return "", err
@@ -64,6 +95,6 @@ func (d *discardWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil // Pretend we wrote everything successfully
 }
 
-func CreateDiscardLogger() *log.Logger {
+func createDiscardLogger() *log.Logger {
 	return log.New(&discardWriter{}, "", 0)
 }

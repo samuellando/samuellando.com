@@ -109,9 +109,9 @@ func (h *templateHandler) renderTemplate(ctxt *context, w http.ResponseWriter, r
 }
 
 func (c *context) arrangeStores() {
-    c.Req.ParseForm()
+	c.Req.ParseForm()
 	tags := make([]string, 0)
-    log.Println(c.Req.Form)
+	log.Println(c.Req.Form)
 	if arr, ok := c.Req.Form["filter-tag"]; ok {
 		for _, v := range arr {
 			tags = append(tags, v)

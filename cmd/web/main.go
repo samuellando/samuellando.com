@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-    "strings"
-    "slices"
+	"slices"
+	"strings"
 
-    "samuellando.com/internal/template"
 	"samuellando.com/internal/auth"
 	"samuellando.com/internal/db"
 	"samuellando.com/internal/middleware"
@@ -15,6 +14,7 @@ import (
 	"samuellando.com/internal/store/asset"
 	"samuellando.com/internal/store/document"
 	"samuellando.com/internal/store/project"
+	"samuellando.com/internal/template"
 )
 
 const TEMPLATE_DIR = "templates"
@@ -57,18 +57,18 @@ func main() {
 		templates:     *templates,
 		DocumentStore: documentStore,
 		ProjectStore:  projectStore,
-        AssetStore: assetStore,
+		AssetStore:    assetStore,
 	}
 	ah := assetHandler{
 		Store:     &assetStore,
 		Templates: *templates,
 	}
 	dh := documentHandler{
-		templates: *templates,
+		templates:     *templates,
 		documentStore: documentStore,
 	}
 	ph := projectHandler{
-		templates: *templates,
+		templates:    *templates,
 		projectStore: projectStore,
 	}
 
@@ -101,4 +101,3 @@ func main() {
 
 	http.ListenAndServe(":8080", nil)
 }
-

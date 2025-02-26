@@ -1,14 +1,14 @@
 package markdown
 
 import (
+	"embed"
 	"fmt"
 	"io"
 	"strings"
-    "embed"
 
 	"github.com/samuellando/gositter"
-    "samuellando.com/internal/template"
-    gotemp "html/template"
+	gotemp "html/template"
+	"samuellando.com/internal/template"
 )
 
 //go:embed markdown_components

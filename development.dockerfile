@@ -13,8 +13,7 @@ RUN go mod download
 COPY . .
 
 # Build the wasm
-RUN GOOS=js GOARCH=wasm go build -o static/main.wasm ./cmd/wasm
-
+RUN GOOS=js GOARCH=wasm go build -o static/main.wasm ./wasm
 
 EXPOSE 8080
 CMD ["go", "run", "./cmd/web"]

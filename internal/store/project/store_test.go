@@ -12,18 +12,8 @@ import (
 )
 
 func setup() (Store, *httptest.Server, *sql.DB) {
-	if err := testutil.ResetDb(); err != nil {
-		panic(err)
-	}
 	con := db.ConnectPostgres(testutil.GetDbCredentials())
-	migrations, err := testutil.GetMigrationsPath()
-	if err != nil {
-		panic(err)
-	}
-	if err := db.ApplyMigrations(con, func(o *db.Options) {
-		o.MigrationsDir = migrations
-		o.Logger = testutil.CreateDiscardLogger()
-	}); err != nil {
+	if err := testutil.ResetDb(con, "projectTest"); err != nil {
 		panic(err)
 	}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

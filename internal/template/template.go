@@ -49,7 +49,7 @@ func (temps *Template) ParseFs(files fs.FS) *Template {
 			return err
 		}
 		if info.IsDir() {
-            initDirLayout(layouts, path)
+			initDirLayout(layouts, path)
 			return nil
 		}
 		return temps.handleFile(files, layouts, path, info)
@@ -83,11 +83,11 @@ func (temps *Template) ExecuteTemplate(wr io.Writer, name string, data any) erro
 // HELPERS
 
 func initDirLayout(layouts map[string]string, path string) {
-    if parent, ok  := layouts[filepath.Dir(path)]; ok {
-        layouts[path] = parent
-    } else {
-        layouts[path] = "{{slot}}"
-    }
+	if parent, ok := layouts[filepath.Dir(path)]; ok {
+		layouts[path] = parent
+	} else {
+		layouts[path] = "{{slot}}"
+	}
 }
 
 func (temps *Template) handleFile(files fs.FS, layouts map[string]string, path string, info fs.DirEntry) error {

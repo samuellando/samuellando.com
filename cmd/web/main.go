@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
     "strings"
+    "slices"
 
     "samuellando.com/internal/template"
 	"samuellando.com/internal/auth"
@@ -33,24 +34,14 @@ func main() {
 		"join": strings.Join,
 		"byTag": func(needs string) func(*document.Document) bool {
 			return func(d *document.Document) bool {
-				for _, tag := range d.Tags() {
-					if tag == needs {
-						return true
-					}
-				}
-				return false
+				return slices.Contains(d.Tags(), needs)
 			}
 		},
 		"arr": func(els ...any) []any {
 			return els
 		},
 		"includes": func(s string, arr []string) bool {
-			for _, v := range arr {
-				if v == s {
-					return true
-				}
-			}
-			return false
+			return slices.Contains(arr, s)
 		},
 	}).ParseTemplates(TEMPLATE_DIR)
 	db := db.ConnectPostgres(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME,
@@ -72,6 +63,14 @@ func main() {
 		Store:     &assetStore,
 		Templates: *templates,
 	}
+	dh := documentHandler{
+		templates: *templates,
+		documentStore: documentStore,
+	}
+	ph := projectHandler{
+		templates: *templates,
+		projectStore: projectStore,
+	}
 
 	// Handling static assets
 	static_hander := http.StripPrefix(STATIC_PREFIX, http.FileServer(http.Dir(STATIC_DIR)))
@@ -84,12 +83,16 @@ func main() {
 		search.GenerateIndex("Document", "/writing", &documentStore),
 		search.GenerateIndex("Project", "/project", &projectStore),
 	)))
-	// Template and document CRUD handlers
+	// Template
 	http.Handle("GET /", middleware.Logging(&th))
-	// Authenticated actions
-	http.Handle("POST /", middleware.Logging(middleware.Authenticated(&th)))
-	http.Handle("PUT /", middleware.Logging(middleware.Authenticated(&th)))
-	http.Handle("DELETE /", middleware.Logging(middleware.Authenticated(&th)))
+	// Document actions
+	http.Handle("GET /document/{document}", middleware.Logging(&dh))
+	http.Handle("POST /document", middleware.Logging(middleware.Authenticated(&dh)))
+	http.Handle("PUT /document/{document}", middleware.Logging(middleware.Authenticated(&dh)))
+	http.Handle("DELETE /document/{document}", middleware.Logging(middleware.Authenticated(&dh)))
+	// Project actions
+	http.Handle("GET /project/{project}", middleware.Logging(&ph))
+	http.Handle("PUT /project/{project}", middleware.Logging(middleware.Authenticated(&ph)))
 	// Handling user assets
 	http.Handle("GET /asset", middleware.Logging(&ah))
 	http.Handle("POST /asset", middleware.Logging(middleware.Authenticated(&ah)))

@@ -1,4 +1,5 @@
-<form hx-encoding='multipart/form-data' hx-post="/asset" hx-target="body">
+<form hx-encoding='multipart/form-data' hx-post="/asset" hx-swap="none"
+    hx-on::after-request="location.reload()">
     <label>File </label>
     <input name="file" type="file" /><br />
     <button type="submit">Upload</button>
@@ -15,7 +16,7 @@
         <td>{{.Name}}</td>
         <td>{{.Created}}</td>
         <td><a hx-boost="false" href="/asset/{{.Name}}">/asset/{{.Name}}</a></td>
-        <td><button hx-target="body" hx-delete="/asset/{{.Name}}">Delete</button></td>
+        <td><button hx-swap="none" hx-on::after-request="location.reload()" hx-delete="/asset/{{.Name}}">Delete</button></td>
     </tr>
     {{end}}
 </table>

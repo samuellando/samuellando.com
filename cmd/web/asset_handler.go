@@ -83,7 +83,6 @@ func (h *assetHandler) createAsset(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, fmt.Sprint(err), 500)
 		return
 	}
-	http.Redirect(w, req, "/asset", http.StatusSeeOther)
 }
 
 func (h *assetHandler) deleteAsset(w http.ResponseWriter, req *http.Request) {
@@ -98,5 +97,4 @@ func (h *assetHandler) deleteAsset(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Faild to delete asset", 500)
 		return
 	}
-	http.Redirect(w, req, "/asset", http.StatusSeeOther)
 }

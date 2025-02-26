@@ -96,7 +96,8 @@ func (ps *Store) AllTags() []string {
         t.value
     FROM tag t
     LEFT JOIN project_tag pt ON pt.tag = t.id
-    WHERE pt.project is not Null and t.value <> '';
+    WHERE pt.project is not Null and t.value <> ''
+    GROUP BY t.value;
     `
 	rows, err := ps.db.Query(query)
 	if err != nil {

@@ -1,13 +1,11 @@
 {{ $project := index . 0 }}
 {{ $ctxt := index . 1 }}
 <li id="project-{{$project.Id}}">
-    <b><a href="{{$project.Url}}">{{$project.Title}}</b></a><br />
-    {{$project.Description}}<br />
-    Created: {{$project.Created}}<br />
-    Last PushP: {{$project.Pushed}}<br />
-    <a href="projects/{{$project.Id}}">Write Ups</a>
+    <div class="project-info">
+        {{template "project" $project}}
+    </div>
     {{if $ctxt.Admin}}
-    <form hx-put="/projects/{{$project.Id}}" hx-target="#project-{{$project.Id}}" hx-push-url="true">
+    <form hx-put="/project/{{$project.Id}}" hx-target="previous .project-info">
         <label>Description </label>
         <input name="description" type="text" value="{{$project.Description}}" /><br />
         <label>Tags </label>

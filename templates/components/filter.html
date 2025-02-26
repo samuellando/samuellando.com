@@ -1,0 +1,9 @@
+{{ $ctxt := index . 0 }}
+{{ $tags := index . 1 }}
+<form hx-get="?" hx-trigger="input" hx-target="body" hx-push-url="true">
+    {{range $tags}}
+    <input type="checkbox" name="filter-tag" value="{{.}}" 
+    {{if (includes . $ctxt.FilterTags)}} checked {{end}} />
+    <label>{{.}}</label>
+    {{end}}
+</form>

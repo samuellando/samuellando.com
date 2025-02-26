@@ -1,5 +1,5 @@
 {{template "edit" .}}
-<form hx-post="{{.Page}}" hx-target="body" hx-push-url="true">
+<form hx-post="/document" hx-swap="none" hx-on:htmx:after-request="location.reload()">
     <label>Title </label>
     <input name="title" type="text" value="" /><br />
     <label>Content </label>

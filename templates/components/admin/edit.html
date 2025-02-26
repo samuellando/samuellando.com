@@ -1,27 +1,31 @@
 <div>
     {{if .Admin}}
     {{$document := .GetDocument}}
-        {{if ne $document nil}}
-        <hr/>
-        <h2>Admin</h2>
-        <form hx-encoding='multipart/form-data' hx-put="{{.Page}}" hx-target="#document" hx-push-url="true" hx-trigger="input delay:500ms">
+    {{if ne $document nil}}
+    <hr />
+    <h2>Admin</h2>
+    <div>
+        <form hx-encoding='multipart/form-data' hx-put="/document/{{.Reference}}" hx-target="#document"
+            hx-trigger="input from:[type='text'] delay:500ms, input from:textarea delay:500ms">
             <label>Title </label>
-            <input name="title" type="text" value="{{$document.Title}}"/><br/>
-            <label>Content </label><br/>
-            <textarea rows="30" cols="100" name="content">{{$document.Content}}</textarea><br/>
+            <input name="title" type="text" value="{{$document.Title}}" /><br />
+            <label>Content </label><br />
+            <textarea rows="30" cols="100" name="content">{{$document.Content}}</textarea><br />
             <label>File </label>
-            <input name="file" type="file"/><br/>
-            <a hx-boost="false" href="/download/{{$document.Id}}">
+            <input name="file" type="file" />
+            <br />
+            <a hx-boost="false" href="/document/{{$document.Id}}?download=true">
                 Download as File
             </a>
             <label>Tags </label>
-            <input name="tags" type="text" value='{{join $document.Tags ","}}'/><br/>
-            <button type="submit">Update</button>
+            <input name="tags" type="text" value='{{join $document.Tags ","}}' /><br />
+            <button hx-put="/document/{{.Reference}}" hx-on:htmx:after-request="location.reload()" type="submit">Update</button>
         </form>
-        <button hx-delete="/{{.Page}}/{{$document.Id}}" hx-target="body" hx-push-url="true">
-            Delete this Document
-        </button>
-        <hr/>
-        {{end}}
-        {{end}}
+    </div>
+    <button hx-delete="/document/{{.Reference}}" hx-target="body" hx-push-url="true">
+        Delete this Document
+    </button>
+    <hr />
+    {{end}}
+    {{end}}
 </div>

@@ -4,13 +4,17 @@ import (
 	"fmt"
 	"io"
 	"strings"
+    "embed"
 
 	"github.com/samuellando/gositter"
     "samuellando.com/internal/template"
     gotemp "html/template"
 )
 
-var COMPONENTS = template.New("components").ParseTemplates("templates/markdown_components")
+//go:embed markdown_components
+var embeded embed.FS
+
+var COMPONENTS = template.New("components").ParseFs(embeded)
 
 func ToHtml(md string) (gotemp.HTML, error) {
 	tree, err := G.Parse(md)

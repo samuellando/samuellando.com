@@ -1,24 +1,4 @@
-<form hx-get="?filter-out-tags=true" hx-trigger="input" hx-target="body" hx-push-url="true">
-    {{range .ProjectStore.AllTags}}
-    <input type="checkbox" name="filter-tag" value="{{.}}" {{if or (eq $.FilterTags nil) (includes . $.FilterTags)}}
-        checked {{end}} /><label>{{.}}</label>
-    {{end}}
-</form>
-<button hx-get="?filter-out-tags=true" hx-push-url="true" hx-target="body">Uncheck All</button>
-<button hx-get="?" hx-push-url="true" hx-target="body">Check All</button>
-<form hx-get="/projects" hx-push-url="true" hx-target="body">
-    <label>Group By:</label>
-    <select name="group">
-        <option value="none"></option>
-        {{range $key, $value := .ProjectGroupFunctions}}
-        <option {{if eq $key ($.Req.FormValue "group" )}}selected="selected" {{end}} value="{{$key}}">
-            {{$value.Name}}
-        </option>
-        {{end}}
-    </select>
-    <br />
-    <input type="submit" />
-</form>
+{{template "filter" (arr . .ProjectStore.AllTags)}}
 {{if ne .ProjectGroups nil}}
 {{range .ProjectGroups.ToSlice }}
 <h3>{{.Key}}</h3>

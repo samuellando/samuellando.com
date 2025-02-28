@@ -3,6 +3,7 @@ package project
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -198,5 +199,6 @@ func copyOf(src []string) []string {
 }
 
 func (p *Project) ToString() string {
-	return p.Title() + p.Description()
+	s := fmt.Sprintf("%s\n%s\n%s", p.Title(), p.Description(), strings.Join(p.Tags(), " "))
+	return s
 }

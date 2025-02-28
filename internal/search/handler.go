@@ -3,10 +3,9 @@ package search
 import (
 	"html/template"
 	"net/http"
-	"strings"
 )
 
-func CreateSearchHandler(indexes ...func() []IndexItem) http.HandlerFunc {
+func CreateSearchHandler(indexes ...indexFunc) http.HandlerFunc {
 	tmpl := `
     <div>
     {{.Type}} <a href="{{.Path}}">{{.Item.Title}}</a>
@@ -18,16 +17,11 @@ func CreateSearchHandler(indexes ...func() []IndexItem) http.HandlerFunc {
 	}
 	return func(w http.ResponseWriter, req *http.Request) {
 		searchString := req.FormValue("q")
-		if searchString == "" {
-			return
-		}
-		for _, index := range indexes {
-			elements := index()
-			for _, elem := range elements {
-				if strings.Contains(elem.Text, searchString) {
-					t.Execute(w, elem)
-				}
+		for i, elem := range searchIndexes(searchString, indexes...) {
+			if i > 2 {
+				break
 			}
+			t.Execute(w, elem)
 		}
 	}
 }

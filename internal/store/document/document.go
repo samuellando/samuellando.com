@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"fmt"
 	"html/template"
+	"strings"
 	"time"
 
 	"samuellando.com/internal/markdown"
@@ -193,6 +194,6 @@ func (d *Document) ToString() string {
 	if err != nil {
 		content = ""
 	}
-	s := d.Title() + "\n" + content
+	s := fmt.Sprintf("%s\n%s\n%s", d.Title(), content, strings.Join(d.Tags(), " "))
 	return s
 }

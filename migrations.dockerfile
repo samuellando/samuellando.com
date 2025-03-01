@@ -15,11 +15,11 @@ COPY . .
 # Build the app
 RUN go build -o goapp ./cmd/migrate
 
-FROM golang:1.23 as run
+FROM scratch as run
 
 WORKDIR /app
 # Copy the application executable from the build image
 COPY --from=build /app/goapp .
 COPY --from=build /app/migrations ./migrations
 
-CMD ["/app/goapp"]
+ENTRYPOINT ["/app/goapp"]

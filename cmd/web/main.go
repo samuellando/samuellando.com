@@ -79,10 +79,15 @@ func main() {
 	http.HandleFunc("POST /auth", middleware.LoggingFunc(auth.Authenticate))
 	http.HandleFunc("POST /deauth", middleware.LoggingFunc(auth.Deauthenticate))
 	// Search endpoint
-	http.HandleFunc("GET /search", middleware.LoggingFunc(search.CreateSearchHandler(
-		search.GenerateIndex("Document", "/writing", &documentStore),
-		search.GenerateIndex("Project", "/project", &projectStore),
-	)))
+	searchResultTemplate := templates.Lookup("search-result")
+	if searchResultTemplate == nil {
+		panic("Must define search result template")
+	}
+	http.HandleFunc("GET /search", middleware.LoggingFunc(
+		search.CreateSearchHandler(
+			*searchResultTemplate,
+			search.GenerateIndex("Project", "/project", &projectStore),
+		)))
 	// Template
 	http.Handle("GET /", middleware.Logging(&th))
 	// Document actions

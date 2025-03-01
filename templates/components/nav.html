@@ -1,17 +1,11 @@
-<nav>
-    <a href="/">home</a>
-    <a href="/projects">projects</a>
-    <a href="/writing">write-ups</a>
-    <a href="/contact">contact</a>
+<nav hx-boost="true" class="flex justify-center gap-x-4 mt-16">
+    {{template "navitem" (arr "/" "home")}}
+    {{template "navitem" (arr "/projects" "projects")}}
+    {{template "navitem" (arr "/contact" "contact")}}
     {{if .Admin}}
     <span>Admin Links:</span>
-    <a href="/admin/documents">all</a>
-    <a href="/admin/assets">assets</a>
-    <a href="" hx-post="/deauth" hx-target="body" hx-push-url="true">LogOut</a>
+    {{template "navitem" (arr "/admin/documents" "documents")}}
+    {{template "navitem" (arr "/admin/assets" "assets")}}
+    <a class="underline" href="" hx-post="/deauth" hx-target="body" hx-push-url="true">LogOut</a>
     {{end}}
 </nav>
-<form action="/search" hx-get="/search" hx-target="#searchResults" hx-trigger="input delay:500ms">
-    <label>Search</label>
-    <input name="q" type="text" />
-</form>
-<div id="searchResults"></div>

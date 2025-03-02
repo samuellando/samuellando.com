@@ -1,6 +1,6 @@
 {{ $project := index . 0 }}
 {{ $ctxt := index . 1 }}
-<li id="project-{{$project.Id}}">
+<div class="w-3/8 lg:w-1/4" id="project-{{$project.Id}}">
     <div class="project-info">
         {{template "project" $project}}
     </div>
@@ -13,4 +13,4 @@
         <button type="submit">Update</button>
     </form>
     {{end}}
-</li>
+</div>

@@ -1,9 +1,12 @@
 {{ $ctxt := index . 0 }}
 {{ $tags := index . 1 }}
-<form hx-get="?" hx-trigger="input" hx-target="body" hx-push-url="true">
+<form hx-get="?" hx-trigger="input" hx-target="body" hx-push-url="true" class="flex flex-wrap gap-2">
     {{range $tags}}
-    <input type="checkbox" name="filter-tag" value="{{.}}" 
+    <input type="checkbox" name="filter-tag" value="{{.}}" id="tag-{{.}}" class="hidden" 
     {{if (includes . $ctxt.FilterTags)}} checked {{end}} />
-    <label>{{.}}</label>
+    <label for="tag-{{.}}" class="cursor-pointer bg-gray-200 rounded-full px-4 py-2 text-sm 
+    {{if (includes . $ctxt.FilterTags)}} bg-blue-500 text-white {{else}} text-gray-700 {{end}}">
+        {{.}}
+    </label>
     {{end}}
 </form>

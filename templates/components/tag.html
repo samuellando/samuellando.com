@@ -1,0 +1,13 @@
+{{$color := "bg-white-500"}}
+
+{{if eq . "golang"}}
+    {{$color = "bg-[#5dc9e2]"}}
+{{else if  eq . "python"}}
+    {{$color = "bg-[#3776ab]"}}
+{{else if eq . "svelte"}}
+    {{$color = "bg-[#f96743]"}}
+{{end}}
+
+<div class="text-black-500 {{$color}} px-2 py-1 text-xs text-center rounded-4xl">
+    {{.}}
+</div>

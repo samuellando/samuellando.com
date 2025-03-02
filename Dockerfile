@@ -31,7 +31,8 @@ COPY . .
 COPY --from=tailwind /app/static ./static
 
 # Build the app
-RUN go build -o goapp ./cmd/web
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o goapp ./cmd/web
+# Build wasm
 RUN GOOS=js GOARCH=wasm go build -o static/main.wasm ./wasm
 
 FROM scratch as run

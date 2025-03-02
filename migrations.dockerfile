@@ -13,7 +13,7 @@ RUN go mod download
 COPY . .
 
 # Build the app
-RUN go build -o goapp ./cmd/migrate
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o goapp ./cmd/migrate
 
 FROM scratch as run
 

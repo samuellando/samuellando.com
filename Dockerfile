@@ -1,4 +1,4 @@
-FROM node:18 as tailwind
+FROM node:22 as tailwind
 
 WORKDIR /app
 
@@ -9,8 +9,8 @@ COPY package-lock.json .
 # Install npm dependencies
 RUN npm install
 
-# Copy the rest of the application files
-COPY static static
+# Copy the the application files
+COPY . .
 
 # Run the Tailwind CLI to build the CSS
 RUN npx tailwindcss -i ./static/input.css -o ./static/output.css --minify

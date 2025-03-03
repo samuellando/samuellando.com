@@ -5,13 +5,17 @@ import (
 	"testing"
 
 	"github.com/lib/pq"
+	"samuellando.com/internal/store/tag"
 )
 
 func TestUpdate(t *testing.T) {
 	ps, ts, db := setup()
 	defer teardown(ts, db)
 	doc, _ := ps.GetById(1296269)
-	arr := []string{"one", "test"}
+	arr := []tag.Tag{
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "one" }),
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "two" }),
+	}
 	err := doc.Update(func(pf *ProjectFields) {
 		pf.Description = "Testing"
 		pf.Tags = arr
@@ -49,7 +53,7 @@ func TestUpdate(t *testing.T) {
 		t.Fatalf("Desc shold be updated in the db %s", desc.String)
 	}
 	for i, tag := range tags {
-		if tag.String != arr[i] {
+		if tag.String != arr[i].Value() {
 			t.Fatalf("Tag shold be updated in db %d %s", i, tag.String)
 		}
 	}

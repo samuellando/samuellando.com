@@ -32,16 +32,16 @@ func GetDbCredentials() (string, string, string, string, string, func(*db.Option
 func ResetDb(con *sql.DB, schema string) error {
 	err := clearSchema(con, schema)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	_, err = con.Exec(fmt.Sprintf("SET search_path TO %s;", schema))
 	if err != nil {
-		panic(err)
+		return err
 	}
 	err = db.InitalizeMigrations(con)
 	migrations, err := getMigrationsPath()
 	if err != nil {
-		panic(err)
+		return err
 	}
 	err = db.ApplyMigrations(con, func(o *db.Options) {
 		o.MigrationsDir = migrations

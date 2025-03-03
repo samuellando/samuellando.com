@@ -88,7 +88,10 @@ func TestCreateProtoAndAdd(t *testing.T) {
 	ds, db := setup()
 	defer teardown(ds)
 	doc := CreateProto()
-	ds.Add(doc)
+	err := ds.Add(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if doc.Id() == -1 {
 		t.Fatal("The doc should have an Id now")
 	}

@@ -16,7 +16,7 @@ type Store struct {
 
 func CreateStore(db *sql.DB) Store {
 	return Store{db: db, run: func() ([]*Document, error) {
-		return queryDocuments(db, "")
+		return queryDocuments(db)
 	}}
 }
 
@@ -186,56 +186,46 @@ func (ds *Store) AllSharedTags(tag string) []string {
 	return tags
 }
 
-func queryDocuments(db *sql.DB, filter string, args ...any) ([]*Document, error) {
+func queryDocuments(db *sql.DB) ([]*Document, error) {
 	query := `
-    SELECT 
-        id AS document_id, 
-        title, 
-        created 
-    FROM document
-    `
-	if filter != "" {
-		query += `
-        WHERE ` + filter
-	}
-	query += `
+    SELECT d.id, d.title, d.created, t.value, t.color
+    FROM document d
+    LEFT JOIN document_tag dt ON dt.document = d.id
+    LEFT JOIN tag t ON dt.tag = t.id
     ORDER BY created DESC;
     `
-	rows, err := db.Query(query, args...)
+	rows, err := db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to query documents: %w", err)
 	}
-	documents := make([]*Document, 0)
+	dfs := make(map[int]DocumentFeilds)
 	for rows.Next() {
 		var id int
+		var tagvalue sql.NullString
+		var tagcolor sql.NullString
 		docFields := DocumentFeilds{}
-		err := rows.Scan(&id, &docFields.Title, &docFields.Created)
+		err := rows.Scan(&id, &docFields.Title, &docFields.Created, &tagvalue, &tagcolor)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
-		query = `
-        SELECT
-            t.value,
-            t.color
-        FROM tag t
-        LEFT JOIN document_tag dt ON dt.tag = t.id
-        LEFT JOIN document d ON dt.document = d.id
-        WHERE d.id = $1
-        `
-		tagRows, err := db.Query(query, id)
-		docTags := make([]tag.Tag, 0)
-		for tagRows.Next() {
-			t := tag.CreateProto(func(tf *tag.TagFields) {
-				tagRows.Scan(&tf.Value, &tf.Color)
-			})
-			docTags = append(docTags, t)
+		if df, ok := dfs[id]; ok {
+			docFields = df
 		}
-		docFields.Tags = docTags
+		if tagvalue.Valid {
+			docFields.Tags = append(docFields.Tags, tag.CreateProto(func(tf *tag.TagFields) {
+				tf.Value = tagvalue.String
+				tf.Color = tagcolor.String
+			}))
+		}
+		dfs[id] = docFields
+	}
+	documents := make([]*Document, 0)
+	for id, df := range dfs {
 		documents = append(documents, &Document{
 			db:     db,
 			loaded: false,
 			id:     id,
-			fields: docFields,
+			fields: df,
 		})
 	}
 	return documents, nil

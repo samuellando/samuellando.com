@@ -202,10 +202,10 @@ func TestGetTags(t *testing.T) {
 	if len(doc.Tags()) != 2 {
 		t.Fatal("Wrong number of tags")
 	}
-	if doc.Tags()[0] != "one" {
+	if doc.Tags()[0].Value() != "one" {
 		t.Fatal("Wrong tag value")
 	}
-	if doc.Tags()[1] != "two" {
+	if doc.Tags()[1].Value() != "two" {
 		t.Fatal("Wrong tag value")
 	}
 }

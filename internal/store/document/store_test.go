@@ -8,12 +8,13 @@ import (
 
 	"github.com/lib/pq"
 	"samuellando.com/internal/db"
+	"samuellando.com/internal/store/tag"
 	"samuellando.com/internal/testutil"
 )
 
 func setup() (Store, *sql.DB) {
 	con := db.ConnectPostgres(testutil.GetDbCredentials())
-	if err := testutil.ResetDb(con, "documentTests"); err != nil {
+	if err := testutil.ResetDb(con, "documentTest"); err != nil {
 		panic(err)
 	}
 	return CreateStore(con), con
@@ -37,26 +38,32 @@ func addDocument(db *sql.DB, title string) int {
 	return id
 }
 
-func TestGetByIdBase(t *testing.T) {
-	ds, db := setup()
-	defer teardown(ds)
-	title := "terstingId"
-	id := addDocument(db, title)
-	doc, _ := ds.GetById(id)
-	if doc.Title() != title {
-		t.Fatal("Ttitle does not match")
-	}
-}
-
 func TestGetAllBase(t *testing.T) {
 	ds, db := setup()
 	defer teardown(ds)
 	addDocument(db, "test")
 	addDocument(db, "test")
 	addDocument(db, "test")
-	data, _ := ds.GetAll()
+	data, err := ds.GetAll()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(data) != 3 {
 		t.Errorf("%d should contain 3 elements", len(data))
+	}
+}
+
+func TestGetByIdBase(t *testing.T) {
+	ds, db := setup()
+	defer teardown(ds)
+	title := "terstingId"
+	id := addDocument(db, title)
+	doc, err := ds.GetById(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if doc.Title() != title {
+		t.Fatal("Ttitle does not match")
 	}
 }
 
@@ -81,10 +88,14 @@ func TestAdd(t *testing.T) {
 	ds, db := setup()
 	defer teardown(ds)
 	start := time.Now()
+	intags := []tag.Tag{
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "one" }),
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "two" }),
+	}
 	ds.Add(CreateProto(func(df *DocumentFeilds) {
 		df.Title = "Test doc"
 		df.Content = "Test content"
-		df.Tags = []string{"one", "two"}
+		df.Tags = intags
 		df.Created = start
 	}))
 	query := `

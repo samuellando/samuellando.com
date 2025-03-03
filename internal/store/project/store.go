@@ -11,6 +11,7 @@ import (
 	"samuellando.com/internal/cache"
 	"samuellando.com/internal/datatypes"
 	"samuellando.com/internal/store"
+	"samuellando.com/internal/store/tag"
 )
 
 const URL = "https://api.github.com/users/samuellando/repos?per_page=100"
@@ -90,32 +91,34 @@ func (ps *Store) Sort(f func(*Project, *Project) bool) store.Store[*Project] {
 	return n
 }
 
-func (ps *Store) AllTags() []string {
+func (ps *Store) AllTags() []tag.Tag {
 	query := `
     SELECT
-        t.value
+        t.value,
+        t.color
     FROM tag t
     LEFT JOIN project_tag pt ON pt.tag = t.id
     WHERE pt.project is not Null and t.value <> ''
-    GROUP BY t.value;
+    GROUP BY t.value, t.color;
     `
 	rows, err := ps.db.Query(query)
 	if err != nil {
-		return []string{}
+		return []tag.Tag{}
 	}
-	tags := make([]string, 0)
+	tags := make([]tag.Tag, 0)
 	for rows.Next() {
-		var value string
-		rows.Scan(&value)
-		tags = append(tags, value)
+		tags = append(tags, tag.CreateProto(func(tf *tag.TagFields) {
+			rows.Scan(&tf.Value, &tf.Color)
+		}))
 	}
 	return tags
 }
 
-func (ds *Store) AllSharedTags(tag string) []string {
+func (ds *Store) AllSharedTags(t string) []tag.Tag {
 	query := `
     SELECT
         t2.value
+        t2.color
     FROM project d
     JOIN project_tag pt1 ON pt1.project = d.id
     JOIN tag t1 ON t1.id = pt1.tag
@@ -123,15 +126,15 @@ func (ds *Store) AllSharedTags(tag string) []string {
     JOIN tag t2 ON t2.id = pt2.tag
     WHERE t1.value = $1 and t2.value <> $1;
     `
-	rows, err := ds.db.Query(query, tag)
+	rows, err := ds.db.Query(query, t)
 	if err != nil {
-		return []string{}
+		return []tag.Tag{}
 	}
-	tags := make([]string, 0)
+	tags := make([]tag.Tag, 0)
 	for rows.Next() {
-		var value string
-		rows.Scan(&value)
-		tags = append(tags, value)
+		tags = append(tags, tag.CreateProto(func(tf *tag.TagFields) {
+			rows.Scan(&tf.Value, &tf.Color)
+		}))
 	}
 	return tags
 }

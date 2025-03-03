@@ -6,6 +6,7 @@
     <span>Admin Links:</span>
     {{template "navitem" (arr "/admin/documents" "documents")}}
     {{template "navitem" (arr "/admin/assets" "assets")}}
+    {{template "navitem" (arr "/admin/tags" "tags")}}
     <a class="underline" href="" hx-post="/deauth" hx-target="body" hx-push-url="true">LogOut</a>
     {{end}}
 </nav>

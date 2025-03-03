@@ -8,12 +8,14 @@ import (
 	"strings"
 
 	"samuellando.com/internal/store/project"
+	"samuellando.com/internal/store/tag"
 	"samuellando.com/internal/template"
 )
 
 type projectHandler struct {
 	templates    template.Template
 	projectStore project.Store
+	tagStore     tag.Store
 }
 
 func (h *projectHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -49,10 +51,22 @@ func (h *projectHandler) getReqProject(req *http.Request) *project.Project {
 	return doc
 }
 
+func (h *projectHandler) getTagsFromReq(req *http.Request) []tag.Tag {
+	tagValues := strings.Split(req.PostFormValue("tags"), ",")
+	tags := make([]tag.Tag, len(tagValues))
+	for i, tv := range tagValues {
+		t, err := h.tagStore.GetByValue(tv)
+		if err == nil {
+			tags[i] = t
+		}
+	}
+	return tags
+}
+
 func (h *projectHandler) updateProject(w http.ResponseWriter, req *http.Request) {
 	proj := h.getReqProject(req)
 	desc := req.PostFormValue("description")
-	tags := strings.Split(req.PostFormValue("tags"), ",")
+	tags := h.getTagsFromReq(req)
 	err := proj.Update(func(pf *project.ProjectFields) {
 		pf.Description = desc
 		pf.Tags = tags

@@ -18,7 +18,7 @@
                 Download as File
             </a>
             <label>Tags </label>
-            <input name="tags" type="text" value='{{join $document.Tags ","}}' /><br />
+            <input name="tags" type="text" value='{{joinTags $document.Tags ","}}' /><br />
             <button hx-put="/document/{{.Reference}}" hx-on:htmx:after-request="location.reload()" type="submit">Update</button>
         </form>
     </div>

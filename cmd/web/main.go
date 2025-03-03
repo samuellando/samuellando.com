@@ -14,6 +14,7 @@ import (
 	"samuellando.com/internal/store/asset"
 	"samuellando.com/internal/store/document"
 	"samuellando.com/internal/store/project"
+	"samuellando.com/internal/store/tag"
 	"samuellando.com/internal/template"
 )
 
@@ -32,9 +33,24 @@ var (
 func main() {
 	templates := template.New("templates").Funcs(template.FuncMap{
 		"join": strings.Join,
+		"joinTags": func(tags []tag.Tag, sep string) string {
+			w := new(strings.Builder)
+			for i, t := range tags {
+				w.WriteString(t.Value())
+				if i < len(tags)-1 {
+					w.WriteString(sep)
+				}
+			}
+			return w.String()
+		},
 		"byTag": func(needs string) func(*document.Document) bool {
 			return func(d *document.Document) bool {
-				return slices.Contains(d.Tags(), needs)
+				for _, t := range d.Tags() {
+					if t.Value() == needs {
+						return true
+					}
+				}
+				return false
 			}
 		},
 		"arr": func(els ...any) []any {
@@ -52,24 +68,31 @@ func main() {
 	documentStore := document.CreateStore(db)
 	projectStore := project.CreateStore(db)
 	assetStore := asset.CreateStore(db)
+	tagStore := tag.CreateStore(db)
 
 	th := templateHandler{
 		templates:     *templates,
 		DocumentStore: documentStore,
 		ProjectStore:  projectStore,
 		AssetStore:    assetStore,
+		TagStore:      tagStore,
 	}
 	ah := assetHandler{
 		Store:     &assetStore,
 		Templates: *templates,
 	}
+	tagh := tagHandler{
+		Store: &tagStore,
+	}
 	dh := documentHandler{
 		templates:     *templates,
 		documentStore: documentStore,
+		tagStore:      tagStore,
 	}
 	ph := projectHandler{
 		templates:    *templates,
 		projectStore: projectStore,
+		tagStore:     tagStore,
 	}
 
 	// Handling static assets
@@ -103,6 +126,9 @@ func main() {
 	http.Handle("POST /asset", middleware.Logging(middleware.Authenticated(&ah)))
 	http.Handle("GET /asset/{asset}", middleware.Logging(&ah))
 	http.Handle("DELETE /asset/{asset}", middleware.Logging(middleware.Authenticated(&ah)))
+	// Handling tag edits
+	http.Handle("PATCH /tag/{tag}", middleware.Logging(middleware.Authenticated(&tagh)))
+	http.Handle("DELETE /tag/{tag}", middleware.Logging(middleware.Authenticated(&tagh)))
 
 	http.ListenAndServe(":8080", nil)
 }

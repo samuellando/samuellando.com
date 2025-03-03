@@ -6,8 +6,7 @@ import (
 
 	"samuellando.com/internal/datatypes"
 	"samuellando.com/internal/store"
-
-	"github.com/lib/pq"
+	"samuellando.com/internal/store/tag"
 )
 
 type Store struct {
@@ -190,24 +189,17 @@ func (ds *Store) AllSharedTags(tag string) []string {
 func queryDocuments(db *sql.DB, filter string, args ...any) ([]*Document, error) {
 	query := `
     SELECT 
-    d.id AS document_id, 
-    d.title, 
-    d.created, 
-    array_agg(t.value) AS tags
-    FROM 
-        document d
-    LEFT JOIN 
-        document_tag dt ON d.id = dt.document
-    LEFT JOIN 
-        tag t ON dt.tag = t.id
+        id AS document_id, 
+        title, 
+        created 
+    FROM document
     `
 	if filter != "" {
 		query += `
         WHERE ` + filter
 	}
 	query += `
-    GROUP BY d.id, d.title, d.created
-    ORDER BY d.created DESC;
+    ORDER BY created DESC;
     `
 	rows, err := db.Query(query, args...)
 	if err != nil {
@@ -217,16 +209,26 @@ func queryDocuments(db *sql.DB, filter string, args ...any) ([]*Document, error)
 	for rows.Next() {
 		var id int
 		docFields := DocumentFeilds{}
-		var tags []sql.NullString
-		err := rows.Scan(&id, &docFields.Title, &docFields.Created, pq.Array(&tags))
+		err := rows.Scan(&id, &docFields.Title, &docFields.Created)
 		if err != nil {
 			panic(err)
 		}
-		docTags := make([]string, 0, len(tags))
-		for _, tag := range tags {
-			if tag.Valid {
-				docTags = append(docTags, tag.String)
-			}
+		query = `
+        SELECT
+            t.value,
+            t.color
+        FROM tag t
+        LEFT JOIN document_tag dt ON dt.tag = t.id
+        LEFT JOIN document d ON dt.document = d.id
+        WHERE d.id = $1
+        `
+		tagRows, err := db.Query(query, id)
+		docTags := make([]tag.Tag, 0)
+		for tagRows.Next() {
+			t := tag.CreateProto(func(tf *tag.TagFields) {
+				tagRows.Scan(&tf.Value, &tf.Color)
+			})
+			docTags = append(docTags, t)
 		}
 		docFields.Tags = docTags
 		documents = append(documents, &Document{

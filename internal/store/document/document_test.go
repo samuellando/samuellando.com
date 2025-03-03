@@ -2,6 +2,7 @@ package document
 
 import (
 	"database/sql"
+	"samuellando.com/internal/store/tag"
 	"testing"
 	"time"
 
@@ -11,7 +12,10 @@ import (
 func TestCreateProtoCopiesTags(t *testing.T) {
 	title := "Test title"
 	content := "Test Content"
-	tags := []string{"one", "two"}
+	tags := []tag.Tag{
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "one" }),
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "two" }),
+	}
 	created := time.Now()
 	doc := CreateProto(func(df *DocumentFeilds) {
 		df.Title = title
@@ -20,7 +24,7 @@ func TestCreateProtoCopiesTags(t *testing.T) {
 		df.Created = created
 	})
 	docTags := doc.Tags()
-	docTags = append(docTags, "three")
+	docTags = append(docTags, tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "three" }))
 	if len(tags) != 2 {
 		t.Fatal("The original array should unaffected")
 	}
@@ -29,7 +33,10 @@ func TestCreateProtoCopiesTags(t *testing.T) {
 func TestCreateProtoAndGet(t *testing.T) {
 	title := "Test title"
 	content := "Test Content"
-	tags := []string{"one", "two"}
+	tags := []tag.Tag{
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "one" }),
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "two" }),
+	}
 	created := time.Now()
 	doc := CreateProto(func(df *DocumentFeilds) {
 		df.Title = title
@@ -110,7 +117,10 @@ func TestCreateAddAndUpdate(t *testing.T) {
 	defer teardown(ds)
 	title := "Test title"
 	content := "Test Content"
-	tags := []string{"one", "two"}
+	tags := []tag.Tag{
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "one" }),
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "two" }),
+	}
 	created := time.UnixMilli(100)
 	doc := CreateProto()
 	ds.Add(doc)
@@ -177,7 +187,10 @@ func TestUpdateCopies(t *testing.T) {
 	ds, _ := setup()
 	defer teardown(ds)
 	title := "Test title"
-	tags := []string{"one", "two"}
+	tags := []tag.Tag{
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "one" }),
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "two" }),
+	}
 	doc := CreateProto()
 	ds.Add(doc)
 	var stolen *DocumentFeilds
@@ -189,9 +202,9 @@ func TestUpdateCopies(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tags[0] = "Zero"
+	stolen.Tags[0] = tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "zero" })
 	docTags := doc.Tags()
-	if docTags[0] != "one" {
+	if docTags[0].Value() != "one" {
 		t.Fatal("The array should unaffected")
 	}
 	stolen.Title = "New title"
@@ -204,7 +217,10 @@ func TestUpdateRollsback(t *testing.T) {
 	ds, _ := setup()
 	defer teardown(ds)
 	title := "Test title"
-	tags := []string{"one", "two"}
+	tags := []tag.Tag{
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "one" }),
+		tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "two" }),
+	}
 	doc := CreateProto()
 	ds.Add(doc)
 	var stolen *DocumentFeilds
@@ -218,7 +234,7 @@ func TestUpdateRollsback(t *testing.T) {
 		t.Fatal("Should fail")
 	}
 	docTags := doc.Tags()
-	stolen.Tags[0] = "Zero"
+	stolen.Tags[0] = tag.CreateProto(func(tf *tag.TagFields) { tf.Value = "zero" })
 	if len(docTags) != 0 {
 		t.Fatal("The array should unaffected")
 	}

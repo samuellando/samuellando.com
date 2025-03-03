@@ -3,10 +3,9 @@ package project
 import (
 	"database/sql"
 	"fmt"
+	"samuellando.com/internal/store/tag"
 	"strings"
 	"time"
-
-	"github.com/lib/pq"
 )
 
 type Project struct {
@@ -22,7 +21,7 @@ type Project struct {
 
 type ProjectFields struct {
 	Description string
-	Tags        []string
+	Tags        []tag.Tag
 }
 
 func (p *Project) Id() int {
@@ -54,7 +53,7 @@ func (p *Project) Url() string {
 	return p.url
 }
 
-func (p *Project) Tags() []string {
+func (p *Project) Tags() []tag.Tag {
 	return p.fields.Tags
 }
 
@@ -110,7 +109,7 @@ func (p *Project) setTags(tx *sql.Tx) error {
     RETURNING id;
     `
 	for i, tag := range p.Tags() {
-		row := tx.QueryRow(query, tag)
+		row := tx.QueryRow(query, tag.Value())
 		err := row.Scan(&tagIds[i])
 		if err != nil {
 			return fmt.Errorf("Failed to create tag: %w", err)
@@ -144,25 +143,15 @@ func loadProject(db *sql.DB, s *schema) (*Project, error) {
 	}
 	// Grab local data from the database.
 	query := `
-    SELECT 
-        p.description,  
-        array_agg(t.value) AS tags
-    FROM 
-        project p
-    LEFT JOIN 
-        project_tag pt ON p.id = pt.project
-    LEFT JOIN 
-        tag t ON t.id = pt.tag
-    WHERE p.id = $1
-    GROUP BY p.description;
+    SELECT description
+    FROM project
+    WHERE id = $1
     `
 	row := db.QueryRow(query, p.Id())
 	var desc sql.NullString
-	var tags []sql.NullString
-	err := row.Scan(&desc, pq.Array(&tags))
+	err := row.Scan(&desc)
 	if err != nil {
 		desc = sql.NullString{Valid: false}
-		tags = []sql.NullString{}
 		// And add it to the table
 		query := `
         INSERT INTO project (id) 
@@ -178,11 +167,20 @@ func loadProject(db *sql.DB, s *schema) (*Project, error) {
 	if desc.Valid {
 		pDesc = desc.String
 	}
-	pTags := make([]string, 0, len(tags))
-	for _, tag := range tags {
-		if tag.Valid {
-			pTags = append(pTags, tag.String)
-		}
+	query = `
+    SELECT value, color
+    FROM tag t
+    LEFT JOIN project_tag pt ON pt.tag = t.id
+    LEFT JOIN project p ON pt.project = p.id
+    WHERE p.id = $1
+    `
+	tagRows, err := db.Query(query, p.Id())
+	pTags := make([]tag.Tag, 0)
+	for tagRows.Next() {
+		tag := tag.CreateProto(func(tf *tag.TagFields) {
+			tagRows.Scan(&tf.Value, &tf.Color)
+		})
+		pTags = append(pTags, tag)
 	}
 	fields := ProjectFields{
 		Description: pDesc,
@@ -192,13 +190,21 @@ func loadProject(db *sql.DB, s *schema) (*Project, error) {
 	return p, nil
 }
 
-func copyOf(src []string) []string {
-	tagsCopy := make([]string, len(src))
+func copyOf(src []tag.Tag) []tag.Tag {
+	tagsCopy := make([]tag.Tag, len(src))
 	copy(tagsCopy, src)
 	return tagsCopy
 }
 
+func values(src []tag.Tag) []string {
+	s := make([]string, len(src))
+	for i, tag := range src {
+		s[i] = tag.Value()
+	}
+	return s
+}
+
 func (p *Project) ToString() string {
-	s := fmt.Sprintf("%s\n%s\n%s", p.Title(), p.Description(), strings.Join(p.Tags(), " "))
+	s := fmt.Sprintf("%s\n%s\n%s", p.Title(), p.Description(), strings.Join(values(p.Tags()), " "))
 	return s
 }

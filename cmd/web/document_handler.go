@@ -10,12 +10,14 @@ import (
 	"strings"
 
 	"samuellando.com/internal/store/document"
+	"samuellando.com/internal/store/tag"
 	"samuellando.com/internal/template"
 )
 
 type documentHandler struct {
 	templates     template.Template
 	documentStore document.Store
+	tagStore      tag.Store
 }
 
 func (h *documentHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -78,7 +80,7 @@ func (h *documentHandler) downloadDocument(w http.ResponseWriter, req *http.Requ
 func (h *documentHandler) createDocument(w http.ResponseWriter, req *http.Request) {
 	title := req.PostFormValue("title")
 	content := req.PostFormValue("content")
-	tags := strings.Split(req.PostFormValue("tags"), ",")
+	tags := h.getTagsFromReq(req)
 	doc := document.CreateProto(func(df *document.DocumentFeilds) {
 		df.Title = title
 		df.Content = content
@@ -92,11 +94,21 @@ func (h *documentHandler) createDocument(w http.ResponseWriter, req *http.Reques
 	}
 	h.renderDocument(w, doc)
 }
+func (h *documentHandler) getTagsFromReq(req *http.Request) []tag.Tag {
+	tagValues := strings.Split(req.PostFormValue("tags"), ",")
+	tags := make([]tag.Tag, len(tagValues))
+	for i, tv := range tagValues {
+		t, err := h.tagStore.GetByValue(tv)
+		if err == nil {
+			tags[i] = t
+		}
+	}
+	return tags
+}
 
 func (h *documentHandler) updateDocument(w http.ResponseWriter, req *http.Request) {
 	doc := h.getReqDoc(req)
 	title := req.PostFormValue("title")
-	tags := strings.Split(req.PostFormValue("tags"), ",")
 	content, err, err_code := getUploadContent(req)
 	if err != nil {
 		log.Println(err)
@@ -106,6 +118,7 @@ func (h *documentHandler) updateDocument(w http.ResponseWriter, req *http.Reques
 	if content == "" {
 		content = req.PostFormValue("content")
 	}
+	tags := h.getTagsFromReq(req)
 	err = doc.Update(func(df *document.DocumentFeilds) {
 		df.Title = title
 		df.Content = content

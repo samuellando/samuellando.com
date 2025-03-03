@@ -1,0 +1,27 @@
+<!-- <form hx-encoding='multipart/form-data' hx-post="/asset" hx-swap="none" -->
+<!--     hx-on::after-request="location.reload()"> -->
+<!--     <label>File </label> -->
+<!--     <input name="file" type="file" /><br /> -->
+<!--     <button type="submit">Upload</button> -->
+<!-- </form> -->
+<table id="list">
+    <tr>
+        <th>Value</th>
+        <th>Color</th>
+        <th>Update</th>
+        <th>Delete</th>
+    </tr>
+    {{range .TagStore.GetAll}}
+    <tr>
+        <td>{{.Value}}</td>
+        <form hx-patch="/tag/{{.Id}}">
+            <td {{if ne .Color nil}}style="background: {{.Color}};" {{end}}><input name="color" type="text"
+                    value="{{if ne .Color nil}}{{.Color}}{{end}}" /></td>
+            <td><button hx-swap="none" hx-on::after-request="location.reload()" hx-patch="/tag/{{.Id}}">Update</button>
+            </td>
+        </form>
+        <td><button hx-swap="none" hx-on::after-request="location.reload()" hx-delete="/tag/{{.Id}}">Delete</button>
+        </td>
+    </tr>
+    {{end}}
+</table>

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -15,6 +16,7 @@ import (
 	"samuellando.com/internal/store/asset"
 	"samuellando.com/internal/store/document"
 	"samuellando.com/internal/store/project"
+	"samuellando.com/internal/store/tag"
 	"samuellando.com/internal/template"
 )
 
@@ -23,6 +25,7 @@ type context struct {
 	ProjectGroups         *datatypes.OrderedMap[string, store.Store[*project.Project]]
 	DocumentStore         *document.Store
 	AssetStore            *asset.Store
+	TagStore              *tag.Store
 	Page                  string
 	Reference             int
 	Admin                 bool
@@ -45,6 +48,7 @@ type templateHandler struct {
 	DocumentStore document.Store
 	ProjectStore  project.Store
 	AssetStore    asset.Store
+	TagStore      tag.Store
 }
 
 func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -57,6 +61,7 @@ func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		DocumentStore:         &h.DocumentStore,
 		ProjectStore:          &h.ProjectStore,
 		AssetStore:            &h.AssetStore,
+		TagStore:              &h.TagStore,
 		Reference:             id,
 		Page:                  page,
 		Admin:                 admin,
@@ -111,7 +116,6 @@ func (h *templateHandler) renderTemplate(ctxt *context, w http.ResponseWriter, r
 func (c *context) arrangeStores() {
 	c.Req.ParseForm()
 	tags := make([]string, 0)
-	log.Println(c.Req.Form)
 	if arr, ok := c.Req.Form["filter-tag"]; ok {
 		for _, v := range arr {
 			tags = append(tags, v)
@@ -127,10 +131,8 @@ func (c *context) arrangeProjects(sortRef string, groupRef string, tags []string
 	if len(tags) > 0 {
 		c.ProjectStore = c.ProjectStore.Filter(func(p *project.Project) bool {
 			for _, pt := range p.Tags() {
-				for _, t := range tags {
-					if pt == t {
-						return true
-					}
+				if slices.Contains(tags, pt.Value()) {
+					return true
 				}
 			}
 			return false
@@ -154,10 +156,8 @@ func (c *context) arrangeDocuments(sortRef string, tags []string) {
 	if len(tags) > 0 {
 		c.DocumentStore = c.DocumentStore.Filter(func(d *document.Document) bool {
 			for _, dt := range d.Tags() {
-				for _, t := range tags {
-					if dt == t {
-						return true
-					}
+				if slices.Contains(tags, dt.Value()) {
+					return true
 				}
 			}
 			return false

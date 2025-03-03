@@ -9,7 +9,7 @@
         <label>Description </label>
         <input name="description" type="text" value="{{$project.Description}}" /><br />
         <label>Tags </label>
-        <input name="tags" type="text" value='{{join $project.Tags ","}}' /><br />
+        <input name="tags" type="text" value='{{joinTags $project.Tags ","}}' /><br />
         <button type="submit">Update</button>
     </form>
     {{end}}

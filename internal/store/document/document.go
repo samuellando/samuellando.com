@@ -12,13 +12,14 @@ import (
 	"time"
 
 	"samuellando.com/internal/markdown"
+	"samuellando.com/internal/store/tag"
 )
 
 // The fields a document contains
 type DocumentFeilds struct {
 	Title   string
 	Content string
-	Tags    []string
+	Tags    []tag.Tag
 	Created time.Time
 }
 
@@ -56,7 +57,7 @@ func (d *Document) Html() (template.HTML, error) {
 	return markdown.ToHtml(content)
 }
 
-func (d *Document) Tags() []string {
+func (d *Document) Tags() []tag.Tag {
 	return copyOf(d.fields.Tags)
 }
 
@@ -73,7 +74,7 @@ func CreateProto(setters ...func(*DocumentFeilds)) *Document {
 	docFields := DocumentFeilds{
 		Title:   "",
 		Content: "",
-		Tags:    []string{},
+		Tags:    []tag.Tag{},
 		Created: time.Now(),
 	}
 	for _, set := range setters {
@@ -147,7 +148,7 @@ func (d *Document) setTags(tx *sql.Tx) error {
     RETURNING id;
     `
 	for i, tag := range d.Tags() {
-		row := tx.QueryRow(query, tag)
+		row := tx.QueryRow(query, tag.Value())
 		err := row.Scan(&tagIds[i])
 		if err != nil {
 			return fmt.Errorf("Failed to create tag: %w", err)
@@ -183,10 +184,18 @@ func (d *Document) loadContent() error {
 	return nil
 }
 
-func copyOf(src []string) []string {
-	tagsCopy := make([]string, len(src))
+func copyOf(src []tag.Tag) []tag.Tag {
+	tagsCopy := make([]tag.Tag, len(src))
 	copy(tagsCopy, src)
 	return tagsCopy
+}
+
+func values(src []tag.Tag) []string {
+	s := make([]string, len(src))
+	for i, tag := range src {
+		s[i] = tag.Value()
+	}
+	return s
 }
 
 func (d *Document) ToString() string {
@@ -194,6 +203,6 @@ func (d *Document) ToString() string {
 	if err != nil {
 		content = ""
 	}
-	s := fmt.Sprintf("%s\n%s\n%s", d.Title(), content, strings.Join(d.Tags(), " "))
+	s := fmt.Sprintf("%s\n%s\n%s", d.Title(), content, strings.Join(values(d.Tags()), " "))
 	return s
 }

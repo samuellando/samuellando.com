@@ -139,6 +139,8 @@ func (c *context) arrangeProjects(sortRef string, groupRef string, tags []string
 		if err == nil {
 			c.ProjectStore = ps.(project.Store)
 			c.FilterTags = tags
+		} else {
+			log.Println(err)
 		}
 	}
 	if groupRef == "" {
@@ -149,11 +151,18 @@ func (c *context) arrangeProjects(sortRef string, groupRef string, tags []string
 		ps, err := c.ProjectStore.Sort(sortFunc.Func)
 		if err == nil {
 			c.ProjectStore = ps.(project.Store)
+		} else {
+			log.Println(err)
 		}
 	}
 	groupFunc, ok := c.ProjectGroupFunctions[groupRef]
 	if ok {
-		c.ProjectGroups, _ = c.ProjectStore.Group(groupFunc.Func)
+		pg, err := c.ProjectStore.Group(groupFunc.Func)
+		if err != nil {
+			log.Println(err)
+		} else {
+			c.ProjectGroups = pg
+		}
 	}
 }
 
@@ -170,12 +179,16 @@ func (c *context) arrangeDocuments(sortRef string, tags []string) {
 		if err == nil {
 			c.DocumentStore = ds.(document.Store)
 			c.FilterTags = tags
+		} else {
+			log.Println(err)
 		}
 	}
 	if sortFunc, ok := c.DocumentSortFunctions[sortRef]; ok {
 		ds, err := c.DocumentStore.Sort(sortFunc.Func)
 		if err == nil {
 			c.DocumentStore = ds.(document.Store)
+		} else {
+			log.Println(err)
 		}
 	}
 }

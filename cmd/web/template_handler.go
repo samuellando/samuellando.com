@@ -21,18 +21,18 @@ import (
 )
 
 type context struct {
-	ProjectStore          *project.Store
-	ProjectGroups         *datatypes.OrderedMap[string, store.Store[*project.Project]]
-	DocumentStore         *document.Store
+	ProjectStore          project.Store
+	ProjectGroups         datatypes.OrderedMap[string, store.Store[project.Project]]
+	DocumentStore         document.Store
 	AssetStore            *asset.Store
 	TagStore              *tag.Store
 	Page                  string
-	Reference             int
+	Reference             int64
 	Admin                 bool
 	Req                   *http.Request
-	ProjectSortFunctions  map[string]sortFunctionReference[*project.Project]
-	DocumentSortFunctions map[string]sortFunctionReference[*document.Document]
-	ProjectGroupFunctions map[string]groupFunctionReference[*project.Project]
+	ProjectSortFunctions  map[string]sortFunctionReference[project.Project]
+	DocumentSortFunctions map[string]sortFunctionReference[document.Document]
+	ProjectGroupFunctions map[string]groupFunctionReference[project.Project]
 	FilterTags            []string
 }
 
@@ -58,11 +58,11 @@ func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		id = -1
 	}
 	ctxt := &context{
-		DocumentStore:         &h.DocumentStore,
-		ProjectStore:          &h.ProjectStore,
+		DocumentStore:         h.DocumentStore,
+		ProjectStore:          h.ProjectStore,
 		AssetStore:            &h.AssetStore,
 		TagStore:              &h.TagStore,
-		Reference:             id,
+		Reference:             int64(id),
 		Page:                  page,
 		Admin:                 admin,
 		Req:                   req,
@@ -80,17 +80,16 @@ func (ctxt *context) GetDocument() *document.Document {
 	doc, err := ds.GetById(ctxt.Reference)
 	if err != nil {
 		return nil
-
 	}
-	return doc
+	return &doc
 }
 
 // Allows to get the requested project from within a template
-func (ctxt *context) GetProject() *project.Project {
+func (ctxt *context) GetProject() project.Project {
 	ps := ctxt.ProjectStore
 	proj, err := ps.GetById(ctxt.Reference)
 	if err != nil {
-		return nil
+		return project.Project{}
 	}
 	return proj
 }
@@ -129,42 +128,54 @@ func (c *context) arrangeStores() {
 func (c *context) arrangeProjects(sortRef string, groupRef string, tags []string) {
 	// And grab the associated function
 	if len(tags) > 0 {
-		c.ProjectStore = c.ProjectStore.Filter(func(p *project.Project) bool {
+		ps, err := c.ProjectStore.Filter(func(p project.Project) bool {
 			for _, pt := range p.Tags() {
-				if slices.Contains(tags, pt.Value()) {
+				if slices.Contains(tags, pt.Value) {
 					return true
 				}
 			}
 			return false
-		}).(*project.Store)
-		c.FilterTags = tags
+		})
+		if err == nil {
+			c.ProjectStore = ps.(project.Store)
+			c.FilterTags = tags
+		}
 	}
 	if groupRef == "" {
 		groupRef = "byLastPush"
 		c.Req.Form.Add("group", "byLastPush")
 	}
 	if sortFunc, ok := c.ProjectSortFunctions[sortRef]; ok {
-		c.ProjectStore = c.ProjectStore.Sort(sortFunc.Func).(*project.Store)
+		ps, err := c.ProjectStore.Sort(sortFunc.Func)
+		if err == nil {
+			c.ProjectStore = ps.(project.Store)
+		}
 	}
 	groupFunc, ok := c.ProjectGroupFunctions[groupRef]
 	if ok {
-		c.ProjectGroups = c.ProjectStore.Group(groupFunc.Func)
+		c.ProjectGroups, _ = c.ProjectStore.Group(groupFunc.Func)
 	}
 }
 
 func (c *context) arrangeDocuments(sortRef string, tags []string) {
 	if len(tags) > 0 {
-		c.DocumentStore = c.DocumentStore.Filter(func(d *document.Document) bool {
+		ds, err := c.DocumentStore.Filter(func(d document.Document) bool {
 			for _, dt := range d.Tags() {
-				if slices.Contains(tags, dt.Value()) {
+				if slices.Contains(tags, dt.Value) {
 					return true
 				}
 			}
 			return false
-		}).(*document.Store)
-		c.FilterTags = tags
+		})
+		if err == nil {
+			c.DocumentStore = ds.(document.Store)
+			c.FilterTags = tags
+		}
 	}
 	if sortFunc, ok := c.DocumentSortFunctions[sortRef]; ok {
-		c.DocumentStore = c.DocumentStore.Sort(sortFunc.Func).(*document.Store)
+		ds, err := c.DocumentStore.Sort(sortFunc.Func)
+		if err == nil {
+			c.DocumentStore = ds.(document.Store)
+		}
 	}
 }

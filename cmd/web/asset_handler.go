@@ -74,11 +74,10 @@ func (h *assetHandler) createAsset(w http.ResponseWriter, req *http.Request) {
 			break
 		}
 	}
-	asset := asset.CreateProto(func(af *asset.AssetFields) {
-		af.Name = header.Filename
-		af.Content = buff
+	_, err = h.Store.Add(asset.ProtoAsset{
+		Name:    header.Filename,
+		Content: buff,
 	})
-	err = h.Store.Add(&asset)
 	if err != nil {
 		http.Error(w, fmt.Sprint(err), 500)
 		return

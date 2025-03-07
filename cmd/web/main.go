@@ -33,20 +33,20 @@ var (
 func main() {
 	templates := template.New("templates").Funcs(template.FuncMap{
 		"join": strings.Join,
-		"joinTags": func(tags []tag.Tag, sep string) string {
+		"joinTags": func(tags []tag.ProtoTag, sep string) string {
 			w := new(strings.Builder)
 			for i, t := range tags {
-				w.WriteString(t.Value())
+				w.WriteString(t.Value)
 				if i < len(tags)-1 {
 					w.WriteString(sep)
 				}
 			}
 			return w.String()
 		},
-		"byTag": func(needs string) func(*document.Document) bool {
-			return func(d *document.Document) bool {
+		"byTag": func(needs string) func(document.Document) bool {
+			return func(d document.Document) bool {
 				for _, t := range d.Tags() {
-					if t.Value() == needs {
+					if t.Value == needs {
 						return true
 					}
 				}

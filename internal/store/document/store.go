@@ -4,229 +4,206 @@ import (
 	"database/sql"
 	"fmt"
 
+	"context"
+
+	"samuellando.com/data"
 	"samuellando.com/internal/datatypes"
 	"samuellando.com/internal/store"
 	"samuellando.com/internal/store/tag"
 )
 
 type Store struct {
-	db  *sql.DB
-	run func() ([]*Document, error)
+	db           *sql.DB
+	materialized *store.MaterializedStore[Document]
 }
 
 func CreateStore(db *sql.DB) Store {
-	return Store{db: db, run: func() ([]*Document, error) {
-		return queryDocuments(db)
-	}}
+	return Store{db: db, materialized: nil}
 }
 
-func createErrorStore(err error) *Store {
-	return &Store{db: nil, run: func() ([]*Document, error) {
-		return nil, err
-	}}
+func (ds Store) GetById(id int64) (Document, error) {
+	if ds.materialized != nil {
+		return ds.materialized.GetById(id)
+	}
+	ctx := context.TODO()
+	queires := data.New(ds.db)
+	rows, err := queires.GetDocument(ctx, id)
+	if err != nil {
+		return Document{}, err
+	}
+	if len(rows) == 0 {
+		return Document{}, fmt.Errorf("Document not found")
+	}
+	tags := make([]tag.ProtoTag, 0)
+	for _, row := range rows {
+		if row.TagID.Valid {
+			tags = append(tags, tag.ProtoTag{
+				Value: row.TagValue.String,
+				Color: row.TagColor.String,
+			})
+		}
+	}
+	return Document{
+		db:      ds.db,
+		id:      rows[0].Document.ID,
+		title:   rows[0].Document.Title,
+		content: rows[0].Document.Content,
+		created: rows[0].Document.Created,
+		tags:    tags,
+	}, nil
 }
 
-func (ds *Store) New(data []*Document) store.Store[*Document] {
-	return &Store{db: ds.db, run: func() ([]*Document, error) {
-		return data, nil
-	}}
-}
-
-func (ds *Store) GetById(id int) (*Document, error) {
-	docs, err := ds.run()
+func (ds Store) GetAll() ([]Document, error) {
+	if ds.materialized != nil {
+		return ds.materialized.GetAll()
+	}
+	ctx := context.TODO()
+	queires := data.New(ds.db)
+	docRows, err := queires.GetDocuments(ctx)
 	if err != nil {
 		return nil, err
 	}
+	docs := make(map[int64]*Document)
+	for _, row := range docRows {
+		if _, ok := docs[row.Document.ID]; !ok {
+			docs[row.Document.ID] = &Document{
+				db:      ds.db,
+				id:      row.Document.ID,
+				title:   row.Document.Title,
+				content: row.Document.Content,
+				created: row.Document.Created,
+				tags:    make([]tag.ProtoTag, 0),
+			}
+		}
+		if row.TagID.Valid {
+			tag := tag.ProtoTag{
+				Value: row.TagValue.String,
+				Color: row.TagColor.String,
+			}
+			docs[row.Document.ID].tags = append(docs[row.Document.ID].tags, tag)
+		}
+	}
+	res := make([]Document, 0)
 	for _, doc := range docs {
-		if doc.Id() == id {
-			return doc, nil
-		}
+		res = append(res, *doc)
 	}
-	return nil, fmt.Errorf("Document %d does not exist", id)
+	return res, nil
 }
 
-func (ds *Store) GetAll() ([]*Document, error) {
-	return ds.run()
-}
-
-func (ds *Store) Add(d *Document) error {
-	tx, err := ds.db.Begin()
-	if err != nil {
-		return fmt.Errorf("Failed to begin transaction: %w", err)
-	}
+func (ds Store) Add(p ProtoDocument) (Document, error) {
+	ctx := context.TODO()
+	tx, err := ds.db.BeginTx(ctx, nil)
 	defer tx.Rollback()
-	// Create the document
-	query := `
-    INSERT INTO document (title, content, created) VALUES ($1, $2, $3) 
-    RETURNING id, created;
-    `
-	content, err := d.Content()
 	if err != nil {
-		return err
+		return Document{}, err
 	}
-	row := tx.QueryRow(query, d.Title(), content, d.Created())
-	err = row.Scan(&d.id, &d.fields.Created)
+	queries := data.New(ds.db).WithTx(tx)
+	id, err := queries.CreateDocument(ctx, data.CreateDocumentParams{
+		Title:   p.Title,
+		Content: p.Content,
+		Created: p.Created,
+	})
 	if err != nil {
-		return fmt.Errorf("Failed to create document: %w", err)
+		return Document{}, err
 	}
-	d.setTags(tx)
-	err = tx.Commit()
+	tagRows, err := queries.SetDocumentTags(ctx, data.SetDocumentTagsParams{
+		Document:  id,
+		TagValues: tagValues(p.Tags),
+	})
 	if err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-	d.db = ds.db
-	return nil
-}
-
-func (ds *Store) Remove(d *Document) error {
-	if d.db == nil {
-		return fmt.Errorf("Cannot delete a proto document")
-	}
-	docs, err := ds.GetAll()
-	if err != nil {
-		return err
-	}
-	exists := false
-	for _, item := range docs {
-		if item.Id() == d.Id() {
-			exists = true
-		}
-	}
-	if !exists {
-		return fmt.Errorf("This document is not in this store")
-	}
-	tx, err := d.db.Begin()
-	if err != nil {
-		return fmt.Errorf("Failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback()
-	query := "DELETE FROM document WHERE id = $1;"
-	_, err = tx.Exec(query, d.id)
-	if err != nil {
-		return fmt.Errorf("Failed to delete document: %w", err)
+		return Document{}, err
 	}
 	err = tx.Commit()
 	if err != nil {
-		return fmt.Errorf("Failed to commit transaction: %w", err)
+		return Document{}, err
 	}
-	// Make it a proto
-	d.id = -1
-	d.db = nil
-	return nil
-}
-
-func (ds *Store) Filter(f func(*Document) bool) store.Store[*Document] {
-	n, err := store.Filter(ds, f)
-	if err != nil {
-		return createErrorStore(err)
-	}
-	return n
-}
-
-func (ds *Store) Group(f func(*Document) string) *datatypes.OrderedMap[string, store.Store[*Document]] {
-	m, err := store.Group(ds, f)
-	if err != nil {
-		m := datatypes.NewOrderedMap[string, store.Store[*Document]]()
-		m.Set("", createErrorStore(err))
-		return m
-	}
-	return m
-}
-
-func (ds *Store) Sort(f func(*Document, *Document) bool) store.Store[*Document] {
-	n, err := store.Sort(ds, f)
-	if err != nil {
-		return createErrorStore(err)
-	}
-	return n
-}
-
-func (ds *Store) AllTags() []string {
-	query := `
-    SELECT
-        t.value
-    FROM tag t
-    LEFT JOIN document_tag dt ON dt.tag = t.id
-    WHERE dt.document is not Null;
-    `
-	rows, err := ds.db.Query(query)
-	if err != nil {
-		return []string{}
-	}
-	tags := make([]string, 0)
-	for rows.Next() {
-		var value string
-		rows.Scan(&value)
-		tags = append(tags, value)
-	}
-	return tags
-}
-
-func (ds *Store) AllSharedTags(tag string) []string {
-	query := `
-    SELECT
-        t2.value
-    FROM document d
-    JOIN document_tag dt1 ON dt1.document = d.id
-    JOIN tag t1 ON t1.id = dt1.tag
-    JOIN document_tag dt2 ON dt2.document = d.id
-    JOIN tag t2 ON t2.id = dt2.tag
-    WHERE t1.value = $1 and t2.value <> $1;
-    `
-	rows, err := ds.db.Query(query, tag)
-	if err != nil {
-		return []string{}
-	}
-	tags := make([]string, 0)
-	for rows.Next() {
-		var value string
-		rows.Scan(&value)
-		tags = append(tags, value)
-	}
-	return tags
-}
-
-func queryDocuments(db *sql.DB) ([]*Document, error) {
-	query := `
-    SELECT d.id, d.title, d.created, t.value, t.color
-    FROM document d
-    LEFT JOIN document_tag dt ON dt.document = d.id
-    LEFT JOIN tag t ON dt.tag = t.id
-    ORDER BY created DESC;
-    `
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to query documents: %w", err)
-	}
-	dfs := make(map[int]DocumentFeilds)
-	for rows.Next() {
-		var id int
-		var tagvalue sql.NullString
-		var tagcolor sql.NullString
-		docFields := DocumentFeilds{}
-		err := rows.Scan(&id, &docFields.Title, &docFields.Created, &tagvalue, &tagcolor)
-		if err != nil {
-			return nil, err
+	tags := make([]tag.ProtoTag, len(tagRows))
+	for i, tagRow := range tagRows {
+		tags[i] = tag.ProtoTag{
+			Value: tagRow.Value,
+			Color: tagRow.Color,
 		}
-		if df, ok := dfs[id]; ok {
-			docFields = df
-		}
-		if tagvalue.Valid {
-			docFields.Tags = append(docFields.Tags, tag.CreateProto(func(tf *tag.TagFields) {
-				tf.Value = tagvalue.String
-				tf.Color = tagcolor.String
-			}))
-		}
-		dfs[id] = docFields
 	}
-	documents := make([]*Document, 0)
-	for id, df := range dfs {
-		documents = append(documents, &Document{
-			db:     db,
-			loaded: false,
-			id:     id,
-			fields: df,
-		})
+	return Document{
+		db:      ds.db,
+		id:      id,
+		title:   p.Title,
+		content: p.Content,
+		created: p.Created,
+		tags:    tags,
+	}, nil
+}
+
+func (ds Store) Filter(f func(Document) bool) (store.Store[Document], error) {
+	var filtered store.Store[Document]
+	var err error
+	if ds.materialized != nil {
+		filtered, err = ds.materialized.Filter(f)
+	} else {
+		filtered, err = store.Filter(ds, f)
 	}
-	return documents, nil
+	if err != nil {
+		return ds, err
+	}
+	if ms, ok := filtered.(store.MaterializedStore[Document]); ok {
+		return Store{db: ds.db, materialized: &ms}, nil
+	} else {
+		panic("Could not type cast to MaterializedStore!")
+	}
+}
+
+func (ds Store) Group(f func(Document) string) (datatypes.OrderedMap[string, store.Store[Document]], error) {
+	return store.Group(ds, f)
+}
+
+func (ds Store) Sort(f func(Document, Document) bool) (store.Store[Document], error) {
+	var sorted store.Store[Document]
+	var err error
+	if ds.materialized != nil {
+		sorted, err = ds.materialized.Sort(f)
+	} else {
+		sorted, err = store.Sort(ds, f)
+	}
+	if err != nil {
+		return ds, err
+	}
+	if ms, ok := sorted.(store.MaterializedStore[Document]); ok {
+		return Store{db: ds.db, materialized: &ms}, nil
+	} else {
+		panic("Could not type cast to MaterializedStore!")
+	}
+}
+
+func (ds Store) AllTags() ([]tag.ProtoTag, error) {
+	ctx := context.TODO()
+	queries := data.New(ds.db)
+	tagRows, err := queries.GetAllDocumentTags(ctx)
+	if err != nil {
+		return nil, err
+	}
+	tags := make([]tag.ProtoTag, len(tagRows))
+	for i, tagRow := range tagRows {
+		tags[i] = tag.ProtoTag{
+			Value: tagRow.Tag.Value,
+			Color: tagRow.Tag.Color,
+		}
+	}
+	return tags, nil
+}
+
+func (ds Store) AllSharedTags(tagValue string) ([]tag.ProtoTag, error) {
+	ctx := context.TODO()
+	queries := data.New(ds.db)
+	tagRows, err := queries.GetSharedDocumentTags(ctx, tagValue)
+	if err != nil {
+		return nil, err
+	}
+	tags := make([]tag.ProtoTag, len(tagRows))
+	for i, tagRow := range tagRows {
+		tags[i] = tag.ProtoTag{
+			Value: tagRow.Tag.Value,
+			Color: tagRow.Tag.Color,
+		}
+	}
+	return tags, nil
 }

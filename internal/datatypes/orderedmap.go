@@ -7,10 +7,10 @@ type OrderedMap[K comparable, V any] struct {
 	values []V
 }
 
-func NewOrderedMap[K comparable, V any]() *OrderedMap[K, V] {
+func NewOrderedMap[K comparable, V any]() OrderedMap[K, V] {
 	keys := make([]K, 0)
 	values := make([]V, 0)
-	return &OrderedMap[K, V]{keys: keys, values: values}
+	return OrderedMap[K, V]{keys: keys, values: values}
 }
 
 func (o *OrderedMap[K, V]) Set(k K, v V) {

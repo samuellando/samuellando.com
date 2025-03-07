@@ -29,13 +29,13 @@ func (h *tagHandler) updateTag(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(w, fmt.Sprint(err), 500)
 	}
-	t, err := h.Store.GetById(id)
+	t, err := h.Store.GetById(int64(id))
 	if err != nil {
 		http.Error(w, "Could not find tag", 404)
 		return
 	}
 	color := req.FormValue("color")
-	err = t.Update(func(tf *tag.TagFields) {
+	err = t.Update(func(tf *tag.ProtoTag) {
 		tf.Color = color
 	})
 	if err != nil {
@@ -50,7 +50,7 @@ func (h *tagHandler) deleteTag(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(w, fmt.Sprint(err), 500)
 	}
-	asset, err := h.Store.GetById(id)
+	asset, err := h.Store.GetById(int64(id))
 	if err != nil {
 		http.Error(w, "Could not find tag", 404)
 		return

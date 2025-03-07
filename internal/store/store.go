@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -21,34 +22,73 @@ import (
 //
 // Reset() is assumed to have no side effects on the original underlying data
 // Ie, a new store is created an filled with the new data.
-type Store[T any] interface {
-	GetById(int) (T, error)
+type Store[T Indexable] interface {
+	GetById(int64) (T, error)
 	GetAll() ([]T, error)
-	Filter(func(T) bool) Store[T]
-	Group(func(T) string) *datatypes.OrderedMap[string, Store[T]]
-	Sort(func(T, T) bool) Store[T]
-	New([]T) Store[T]
+	Filter(func(T) bool) (Store[T], error)
+	Group(func(T) string) (datatypes.OrderedMap[string, Store[T]], error)
+	Sort(func(T, T) bool) (Store[T], error)
 }
 
-func Filter[T any](s Store[T], f func(T) bool) (Store[T], error) {
+type Indexable interface {
+	Id() int64
+}
+
+type MaterializedStore[T Indexable] struct {
+	data []T
+}
+
+func create[T Indexable](arr []T) Store[T] {
+	return MaterializedStore[T]{data: arr}
+}
+
+func (ms MaterializedStore[T]) GetById(id int64) (T, error) {
+	for _, v := range ms.data {
+		if v.Id() == id {
+			return v, nil
+		}
+	}
+	var zero T
+	return zero, fmt.Errorf("No value with id %d found in store", id)
+}
+
+func (ms MaterializedStore[T]) GetAll() ([]T, error) {
+	c := make([]T, len(ms.data))
+	copy(c, ms.data)
+	return c, nil
+}
+
+func (ms MaterializedStore[T]) Filter(f func(T) bool) (Store[T], error) {
+	return Filter(ms, f)
+}
+
+func (ms MaterializedStore[T]) Group(f func(T) string) (datatypes.OrderedMap[string, Store[T]], error) {
+	return Group(ms, f)
+}
+
+func (ms MaterializedStore[T]) Sort(f func(T, T) bool) (Store[T], error) {
+	return Sort(ms, f)
+}
+
+func Filter[T Indexable](s Store[T], f func(T) bool) (Store[T], error) {
 	filtered := make([]T, 0)
 	all, err := s.GetAll()
 	if err != nil {
-		return nil, err
+		return MaterializedStore[T]{}, err
 	}
 	for _, elem := range all {
 		if f(elem) {
 			filtered = append(filtered, elem)
 		}
 	}
-	return s.New(filtered), nil
+	return create(filtered), nil
 }
 
-func Group[T any](s Store[T], f func(T) string) (*datatypes.OrderedMap[string, Store[T]], error) {
+func Group[T Indexable](s Store[T], f func(T) string) (datatypes.OrderedMap[string, Store[T]], error) {
 	all, err := s.GetAll()
 	var zero datatypes.OrderedMap[string, Store[T]]
 	if err != nil {
-		return &zero, err
+		return zero, err
 	}
 	// Classify the elements
 	groups := datatypes.NewOrderedMap[string, []T]()
@@ -70,7 +110,7 @@ func Group[T any](s Store[T], f func(T) string) (*datatypes.OrderedMap[string, S
 	stores := datatypes.NewOrderedMap[string, Store[T]]()
 	for _, group := range groupNames {
 		a, _ := groups.Get(group)
-		stores.Set(group, s.New(a))
+		stores.Set(group, create(a))
 	}
 	return stores, nil
 }
@@ -84,12 +124,12 @@ func (a *by[T]) Len() int           { return len(a.elems) }
 func (a *by[T]) Swap(i, j int)      { a.elems[i], a.elems[j] = a.elems[j], a.elems[i] }
 func (a *by[T]) Less(i, j int) bool { return a.lessFunc(a.elems[i], a.elems[j]) }
 
-func Sort[T any](s Store[T], less func(T, T) bool) (Store[T], error) {
+func Sort[T Indexable](s Store[T], less func(T, T) bool) (Store[T], error) {
 	all, err := s.GetAll()
 	if err != nil {
 		return nil, err
 	}
 	b := by[T]{elems: all, lessFunc: less}
 	sort.Sort(&b)
-	return s.New(b.elems), nil
+	return create(b.elems), nil
 }

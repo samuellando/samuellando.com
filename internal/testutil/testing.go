@@ -45,6 +45,7 @@ func ResetDb(con *sql.DB, schema string) error {
 	}
 	err = db.ApplyMigrations(con, func(o *db.Options) {
 		o.MigrationsDir = migrations
+		o.Logger = createDiscardLogger()
 	})
 	return err
 }

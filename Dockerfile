@@ -15,6 +15,14 @@ COPY . .
 # Run the Tailwind CLI to build the CSS
 RUN npx tailwindcss -i ./static/input.css -o ./static/output.css --minify
 
+FROM debian as sqlc
+WORKDIR /app
+COPY --from=sqlc/sqlc:1.28.0 /workspace/sqlc /usr/bin/sqlc
+COPY queries ./queries
+COPY migrations ./migrations
+COPY sqlc.yml . 
+RUN sqlc generate
+
 FROM golang:1.23 as build
 
 WORKDIR /app
@@ -29,6 +37,7 @@ RUN go mod download
 # Copy everything
 COPY . .
 COPY --from=tailwind /app/static ./static
+COPY --from=sqlc /app/data ./data
 
 # Build the app
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o goapp ./cmd/web

@@ -10,7 +10,7 @@ import (
 
 // Interface for stored items that are Searchable
 type Searchable interface {
-	Id() int
+	Id() int64
 	Title() string
 	ToString() string
 }

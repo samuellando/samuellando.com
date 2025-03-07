@@ -5,204 +5,140 @@
 package document
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"html/template"
 	"strings"
 	"time"
 
+	"samuellando.com/data"
 	"samuellando.com/internal/markdown"
 	"samuellando.com/internal/store/tag"
 )
 
-// The fields a document contains
-type DocumentFeilds struct {
+// A prototype document used for creating documents.
+type ProtoDocument struct {
 	Title   string
 	Content string
-	Tags    []tag.Tag
+	Tags    []tag.ProtoTag
 	Created time.Time
 }
 
-// An actual document in the database, or a proto document (not cerated or deleted)
+// An actual document in the database.
 type Document struct {
-	db     *sql.DB
-	loaded bool
-	id     int
-	fields DocumentFeilds
+	db      *sql.DB
+	id      int64
+	title   string
+	content string
+	tags    []tag.ProtoTag
+	created time.Time
 }
 
-func (d *Document) Id() int {
+func (d Document) Id() int64 {
 	return d.id
 }
 
-func (d *Document) Title() string {
-	return d.fields.Title
+func (d Document) Title() string {
+	return d.title
 }
 
 // Dynamically loads the content from the database if it's not loaded yet
-func (d *Document) Content() (string, error) {
-	if !d.loaded {
-		if err := d.loadContent(); err != nil {
-			return "", err
-		}
-	}
-	return d.fields.Content, nil
+func (d Document) Content() string {
+	return d.content
 }
 
-func (d *Document) Html() (template.HTML, error) {
-	content, err := d.Content()
-	if err != nil {
-		return "", err
-	}
+func (d Document) Html() (template.HTML, error) {
+	content := d.Content()
 	return markdown.ToHtml(content)
 }
 
-func (d *Document) Tags() []tag.Tag {
-	return copyOf(d.fields.Tags)
+func (d Document) Tags() []tag.ProtoTag {
+	return copyTags(d.tags)
 }
 
-func (d *Document) Created() time.Time {
-	return d.fields.Created
+func (d Document) Created() time.Time {
+	return d.created
 }
 
-// Creates a document that does not yet exist in a DocumentStore and must be added with
-// DocumentStore.Add
-//
-// Once the protoDoc is created is is immutable (everything is deep copied) until
-// it is added to the Document Store and updated with the Update method.
-func CreateProto(setters ...func(*DocumentFeilds)) *Document {
-	docFields := DocumentFeilds{
-		Title:   "",
-		Content: "",
-		Tags:    []tag.Tag{},
-		Created: time.Now(),
-	}
-	for _, set := range setters {
-		set(&docFields)
-	}
-	docFields.Tags = copyOf(docFields.Tags)
-	doc := Document{db: nil, id: -1, loaded: true, fields: docFields}
-	return &doc
+func (d Document) ToString() string {
+	content := d.Content()
+	s := fmt.Sprintf("%s\n%s\n%s", d.Title(), content, strings.Join(tagValues(d.Tags()), " "))
+	return s
 }
 
 // Update a document
 //
-// # This does not work for proto documents
-//
 // everything is deep copied, and rolled back in case of an error
-func (d *Document) Update(setters ...func(*DocumentFeilds)) error {
-	if d.db == nil {
-		return fmt.Errorf("Cannot update a proto document")
+func (d *Document) Update(setters ...func(*ProtoDocument)) error {
+	p := ProtoDocument{
+		Title:   d.Title(),
+		Content: d.Content(),
+		Created: d.Created(),
+		Tags:    d.Tags(),
 	}
-	original := d.fields
-	c := d.fields
-	c.Tags = copyOf(c.Tags)
-	for _, set := range setters {
-		set(&c)
+	for _, setter := range setters {
+		setter(&p)
 	}
-	// Make a copy of everything
-	d.fields = c
-	d.fields.Tags = copyOf(c.Tags)
-	if d.fields.Content != "" {
-		d.loaded = true
-	}
-	// and update in the db
-	tx, err := d.db.Begin()
-	if err != nil {
-		return fmt.Errorf("Failed to begin transaction: %w", err)
-	}
-	defer func() {
-		tx.Rollback()
-		if err != nil {
-			d.fields = original
-		}
-	}()
-	query := `
-    UPDATE document SET 
-        title = $1,
-        content = $2,
-        created = $3
-    WHERE 
-        id = $4;`
-	content, err := d.Content()
+
+	ctx := context.TODO()
+	tx, err := d.db.BeginTx(ctx, nil)
+	defer tx.Rollback()
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(query, d.Title(), content, d.Created(), d.Id())
-	err = d.setTags(tx)
+	queries := data.New(d.db).WithTx(tx)
+	err = queries.UpdateDocument(ctx, data.UpdateDocumentParams{
+		ID:      d.Id(),
+		Title:   p.Title,
+		Content: p.Content,
+		Created: p.Created,
+	})
+	if err != nil {
+		return err
+	}
+	tagRows, err := queries.SetDocumentTags(ctx, data.SetDocumentTagsParams{
+		Document:  d.id,
+		TagValues: tagValues(p.Tags),
+	})
 	if err != nil {
 		return err
 	}
 	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	tags := make([]tag.ProtoTag, len(tagRows))
+	for i, tagRow := range tagRows {
+		tags[i] = tag.ProtoTag{
+			Value: tagRow.Value,
+			Color: tagRow.Color,
+		}
+	}
+	d.title = p.Title
+	d.content = p.Content
+	d.created = p.Created
+	d.tags = tags
+	return nil
+}
+
+func (d Document) Delete() error {
+	ctx := context.TODO()
+	queries := data.New(d.db)
+	err := queries.DeleteDocument(ctx, d.id)
 	return err
 }
 
-func (d *Document) setTags(tx *sql.Tx) error {
-	// Create the tags if they are missingue
-	tagIds := make([]int, len(d.Tags()))
-	query := `
-    INSERT INTO tag (value) 
-    VALUES ($1) 
-    ON CONFLICT (value) DO UPDATE 
-    SET value = tag.value
-    RETURNING id;
-    `
-	for i, tag := range d.Tags() {
-		row := tx.QueryRow(query, tag.Value())
-		err := row.Scan(&tagIds[i])
-		if err != nil {
-			return fmt.Errorf("Failed to create tag: %w", err)
-		}
-	}
-	// Reset document - tag associations
-	query = "DELETE FROM document_tag WHERE document = $1;"
-	_, err := tx.Exec(query, d.Id())
-	if err != nil {
-		return err
-	}
-	query = "INSERT INTO document_tag (document, tag) VALUES ($1, $2);"
-	for i := range d.Tags() {
-		_, err := tx.Exec(query, d.Id(), tagIds[i])
-		if err != nil {
-			return fmt.Errorf("Failed to apply tag: %w", err)
-		}
-	}
-	return nil
-}
-
-func (d *Document) loadContent() error {
-	if d.db == nil {
-		return fmt.Errorf("Can't load contant of a proto document")
-	}
-	query := "SELECT content FROM document WHERE id = $1"
-	row := d.db.QueryRow(query, d.id)
-	err := row.Scan(&d.fields.Content)
-	if err != nil {
-		return err
-	}
-	d.loaded = true
-	return nil
-}
-
-func copyOf(src []tag.Tag) []tag.Tag {
-	tagsCopy := make([]tag.Tag, len(src))
-	copy(tagsCopy, src)
-	return tagsCopy
-}
-
-func values(src []tag.Tag) []string {
+func tagValues(src []tag.ProtoTag) []string {
 	s := make([]string, len(src))
 	for i, tag := range src {
-		s[i] = tag.Value()
+		s[i] = tag.Value
 	}
 	return s
 }
 
-func (d *Document) ToString() string {
-	content, err := d.Content()
-	if err != nil {
-		content = ""
-	}
-	s := fmt.Sprintf("%s\n%s\n%s", d.Title(), content, strings.Join(values(d.Tags()), " "))
-	return s
+func copyTags(in []tag.ProtoTag) []tag.ProtoTag {
+	tagsCopy := make([]tag.ProtoTag, len(in))
+	copy(tagsCopy, in)
+	return tagsCopy
 }

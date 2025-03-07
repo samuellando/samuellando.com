@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"samuellando.com/internal/db"
-	"samuellando.com/internal/testutil"
-	"strings"
 	"testing"
+
+	"samuellando.com/internal/db"
+	"samuellando.com/internal/store/tag"
+	"samuellando.com/internal/testutil"
 )
 
 func setup() (Store, *httptest.Server, *sql.DB) {
@@ -38,174 +39,210 @@ func teardown(ts *httptest.Server, db *sql.DB) {
 func TestGetByIdBase(t *testing.T) {
 	ps, ts, db := setup()
 	defer teardown(ts, db)
-	doc, _ := ps.GetById(1296269)
-	if doc.Title() != "Hello-World" {
+	proj, _ := ps.GetById(1296269)
+	if proj.Title() != "Hello-World" {
 		t.Fatal("Ttitle does not match")
+	}
+	desc := "And your Last!"
+	proj.Update(func(pp *ProtoProject) {
+		pp.Description = &desc
+		pp.Tags = []tag.ProtoTag{
+			{Value: "one"},
+			{Value: "two"},
+		}
+	})
+	proj, _ = ps.GetById(1296269)
+	if proj.Description() != desc {
+		t.Fatal("description not loaded from internal")
+	}
+	if len(proj.Tags()) != 2 {
+		t.Fatal("tags not loaded from internal")
 	}
 }
 
 func TestGetAllBase(t *testing.T) {
 	ps, ts, db := setup()
 	defer teardown(ts, db)
-	projects, _ := ps.GetAll()
+	projects, err := ps.GetAll()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(projects) != 4 {
 		t.Fatal("Should have 4 projects")
 	}
-}
-
-func TestFilter(t *testing.T) {
-	ps, ts, db := setup()
-	defer teardown(ts, db)
-	filtered := ps.Filter(func(d *Project) bool {
-		return strings.HasSuffix(d.Title(), "two")
-	})
-	data, _ := filtered.GetAll()
-	if len(data) != 2 {
-		t.Errorf("%d should contain 2 elements", len(data))
-	}
-}
-
-func TestGetIdFiltered(t *testing.T) {
-	ps, ts, db := setup()
-	defer teardown(ts, db)
-	filtered := ps.Filter(func(d *Project) bool {
-		return strings.HasSuffix(d.Title(), "two")
-	})
-	elem, err := filtered.GetById(1299)
-	if err != nil {
-		t.Error(err)
-	}
-	if elem.Title() != "Hello-World-two" {
-		t.Error("Wrong element")
-	}
-	_, err = filtered.GetById(1296269)
-	if err == nil {
-		t.Error("Should not be included")
-	}
-}
-
-func TestSort(t *testing.T) {
-	ps, ts, db := setup()
-	defer teardown(ts, db)
-	sorted := ps.Sort(func(a, b *Project) bool {
-		return a.Id() < b.Id()
-	})
-	data, _ := sorted.GetAll()
-	if len(data) != 4 {
-		t.Errorf("%d should contain 4 elements", len(data))
-	}
-	for i, c := range []string{"Bye-World-two", "Hello-World-two", "Hello-World", "Bye-World"} {
-		if data[i].Title() != c {
-			t.Error("Out of order")
+	desc := "And your Last!"
+	projects[0].Update(func(pp *ProtoProject) {
+		pp.Description = &desc
+		pp.Tags = []tag.ProtoTag{
+			{Value: "one"},
+			{Value: "two"},
 		}
-	}
-}
-
-func TestGroup(t *testing.T) {
-	ps, ts, db := setup()
-	defer teardown(ts, db)
-	groups := ps.Group(func(d *Project) string {
-		return string(d.Title()[0])
 	})
-	if groups.Len() != 2 {
-		t.Error("Wrong number of groups")
-	}
-	expectedLens := map[string]int{"H": 2, "B": 2}
-	for k, s := range groups.All() {
-		data, _ := s.GetAll()
-		if len(data) != expectedLens[k] {
-			t.Errorf("%d should contain %d elements", len(data), expectedLens[k])
+	id := projects[0].Id()
+	projects, _ = ps.GetAll()
+	for _, proj := range projects {
+		if proj.Id() == id {
+			if proj.Description() != desc {
+				t.Fatalf("description not loaded from internal '%s'", proj.Description())
+			}
+			if len(proj.Tags()) != 2 {
+				t.Fatal("tags not loaded from internal")
+			}
 		}
-	}
-}
-
-func TestStack(t *testing.T) {
-	ps, ts, db := setup()
-	defer teardown(ts, db)
-	g, _ := ps.Sort(func(a, b *Project) bool {
-		return a.Id() < b.Id()
-	}).Group(func(p *Project) string {
-		return strings.Split(p.Title(), "-")[0]
-	}).Get("Bye")
-	res, _ := g.Filter(func(p *Project) bool {
-		return strings.HasSuffix(p.Title(), "two")
-	}).GetAll()
-	if res[0].Title() != "Bye-World-two" {
-		t.Fatal("Wrong element")
 	}
 }
 
 func TestGetDesc(t *testing.T) {
 	ps, ts, db := setup()
 	defer teardown(ts, db)
-	id := 1296269
-	doc, _ := ps.GetById(id)
-	if doc.Title() != "Hello-World" {
+	id := int64(1296269)
+	proj, _ := ps.GetById(id)
+	if proj.Title() != "Hello-World" {
 		t.Fatal("Wrong Title")
 	}
-	if doc.Description() != "This your first repo!" {
-		t.Fatalf("Wrong desc %s", doc.Description())
+	if proj.Description() != "This your first repo!" {
+		t.Fatalf("Wrong desc %s", proj.Description())
 	}
-	query := `
-    UPDATE project
-    SET description = $2
-    WHERE id = $1;`
-	_, err := db.Exec(query, id, "And your Last!")
-	if err != nil {
-		t.Fatal(err)
-	}
-	doc, _ = ps.GetById(id)
-	if doc.Description() != "And your Last!" {
-		t.Fatalf("Wrong desc %s", doc.Description())
+	desc := "And your Last!"
+	proj.Update(func(pp *ProtoProject) {
+		pp.Description = &desc
+	})
+	proj, _ = ps.GetById(id)
+	if proj.Description() != "And your Last!" {
+		t.Fatalf("Wrong desc %s", proj.Description())
 	}
 }
 
 func TestGetTags(t *testing.T) {
 	ps, ts, db := setup()
 	defer teardown(ts, db)
-	id := 1296269
+	id := int64(1296269)
 	doc, _ := ps.GetById(id)
-	if doc.Title() != "Hello-World" {
-		t.Fatal("Wrong Title")
+	if len(doc.Tags()) != 0 {
+		t.Fatal("There should be no tags")
 	}
-	if doc.Description() != "This your first repo!" {
-		t.Fatalf("Wrong desc %s", doc.Description())
-	}
-	var id1 int
-	var id2 int
-	query := `
-    INSERT INTO tag (value) VALUES ('one')
-    RETURNING id;
-    `
-	row := db.QueryRow(query)
-	err := row.Scan(&id1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	query = `
-    INSERT INTO tag (value) VALUES ('two')
-    RETURNING id;
-    `
-	row = db.QueryRow(query)
-	err = row.Scan(&id2)
-	if err != nil {
-		t.Fatal(err)
-	}
-	query = `
-    INSERT INTO project_tag (tag, project) VALUES ($2, $1), ($3, $1);
-    `
-	_, err = db.Exec(query, id, id1, id2)
-	if err != nil {
-		t.Fatal(err)
-	}
+	doc.Update(func(pp *ProtoProject) {
+		pp.Tags = []tag.ProtoTag{
+			{Value: "one"},
+			{Value: "two"},
+		}
+	})
 	doc, _ = ps.GetById(id)
 	if len(doc.Tags()) != 2 {
 		t.Fatal("Wrong number of tags")
 	}
-	if doc.Tags()[0].Value() != "one" {
+	if doc.Tags()[0].Value != "one" {
 		t.Fatal("Wrong tag value")
 	}
-	if doc.Tags()[1].Value() != "two" {
+	if doc.Tags()[1].Value != "two" {
 		t.Fatal("Wrong tag value")
+	}
+}
+
+func TestAllTags(t *testing.T) {
+	ps, ts, db := setup()
+	defer teardown(ts, db)
+
+	tags, err := ps.AllTags()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tags) != 0 {
+		t.Fatal("There should be no tags")
+	}
+
+	projs, _ := ps.GetAll()
+	projs[0].Update(func(pp *ProtoProject) {
+		pp.Tags = []tag.ProtoTag{
+			{Value: "golang"},
+			{Value: "python"},
+		}
+	})
+	projs[1].Update(func(pp *ProtoProject) {
+		pp.Tags = []tag.ProtoTag{
+			{Value: "golang"},
+			{Value: "java"},
+			{Value: "svelte"},
+		}
+	})
+
+	expectedTags := map[string]string{
+		"golang": "white",
+		"python": "white",
+		"java":   "white",
+		"svelte": "white",
+	}
+
+	tags, err = ps.AllTags()
+
+	if len(tags) != len(expectedTags) {
+		t.Fatalf("Expected %d tags, got %d", len(expectedTags), len(tags))
+	}
+
+	for _, tag := range tags {
+		expectedColor, exists := expectedTags[tag.Value]
+		if !exists {
+			t.Fatalf("Unexpected tag value: %s", tag.Value)
+		}
+		if tag.Color != expectedColor {
+			t.Fatalf("Expected color for tag %s to be %s, got %s", tag.Value, expectedColor, tag.Color)
+		}
+	}
+}
+
+func TestAllSharedTags(t *testing.T) {
+	ps, ts, db := setup()
+	defer teardown(ts, db)
+
+	tags, err := ps.AllSharedTags("golang")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(tags) != 0 {
+		t.Fatal("There should be no tags")
+	}
+
+	projs, _ := ps.GetAll()
+	projs[0].Update(func(pp *ProtoProject) {
+		pp.Tags = []tag.ProtoTag{
+			{Value: "golang"},
+			{Value: "python"},
+		}
+	})
+	projs[1].Update(func(pp *ProtoProject) {
+		pp.Tags = []tag.ProtoTag{
+			{Value: "golang"},
+			{Value: "java"},
+			{Value: "svelte"},
+		}
+	})
+	projs[2].Update(func(pp *ProtoProject) {
+		pp.Tags = []tag.ProtoTag{
+			{Value: "lisp"},
+			{Value: "lua"},
+		}
+	})
+
+	expectedTags := map[string]string{
+		"golang": "white",
+		"python": "white",
+		"java":   "white",
+		"svelte": "white",
+	}
+
+	tags, err = ps.AllSharedTags("golang")
+
+	if len(tags) != len(expectedTags) {
+		t.Fatalf("Expected %d tags, got %d", len(expectedTags), len(tags))
+	}
+
+	for _, tag := range tags {
+		expectedColor, exists := expectedTags[tag.Value]
+		if !exists {
+			t.Fatalf("Unexpected tag value: %s", tag.Value)
+		}
+		if tag.Color != expectedColor {
+			t.Fatalf("Expected color for tag %s to be %s, got %s", tag.Value, expectedColor, tag.Color)
+		}
 	}
 }

@@ -1,34 +1,25 @@
 package tag
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"samuellando.com/data"
 )
 
 type Tag struct {
 	db    *sql.DB
-	id    int
+	id    int64
 	value string
-	color *string
+	color string
 }
 
-type TagFields struct {
+type ProtoTag struct {
 	Value string
 	Color string
 }
 
-func CreateProto(opts ...func(*TagFields)) Tag {
-	fields := TagFields{
-		Value: "",
-		Color: "",
-	}
-	for _, opt := range opts {
-		opt(&fields)
-	}
-	return Tag{value: fields.Value, color: &fields.Color}
-}
-
-func (a Tag) Id() int {
+func (a Tag) Id() int64 {
 	return a.id
 }
 
@@ -36,64 +27,39 @@ func (a Tag) Value() string {
 	return a.value
 }
 
-func (a Tag) Color() *string {
-	if a.color == nil || *a.color == "" {
-		return nil
-	}
+func (a Tag) Color() string {
 	return a.color
 }
 
-func (a Tag) Update(opts ...func(*TagFields)) error {
-	color := ""
-	if a.color != nil {
-		color = *a.color
-	}
-	fields := TagFields{
-		Value: a.value,
-		Color: color,
+func (a *Tag) Update(opts ...func(*ProtoTag)) error {
+	proto := ProtoTag{
+		Value: a.Value(),
+		Color: a.Color(),
 	}
 	for _, opt := range opts {
-		opt(&fields)
+		opt(&proto)
 	}
-	tx, err := a.db.Begin()
-	if err != nil {
-		return fmt.Errorf("Failed to begin transaction: %w", err)
+	if proto.Value != a.Value() {
+		return fmt.Errorf("Cannot change the value of a tag")
 	}
-	defer tx.Rollback()
-	query := `
-        UPDATE tag
-        SET color = $1
-        WHERE id = $2
-    `
-	_, err = tx.Exec(query, fields.Color, a.Id())
+
+	ctx := context.TODO()
+	queries := data.New(a.db)
+	row, err := queries.CreateOrUpdateTag(ctx, data.CreateOrUpdateTagParams{
+		Value: a.Value(),
+		Color: proto.Color,
+	})
 	if err != nil {
 		return err
 	}
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("Failed to commit transaction: %w", err)
-	}
-	a.color = &fields.Color
+	a.value = row.Tag.Value
+	a.color = row.Tag.Color
 	return nil
 }
 
-func (a Tag) Delete() error {
-	tx, err := a.db.Begin()
-	if err != nil {
-		return fmt.Errorf("Failed to begin transaction: %w", err)
-	}
-	defer tx.Rollback()
-	query := `
-        DELETE FROM tag
-        WHERE id = $1
-    `
-	_, err = tx.Exec(query, a.Id())
-	if err != nil {
-		return err
-	}
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("Failed to commit transaction: %w", err)
-	}
-	return nil
+func (a *Tag) Delete() error {
+	ctx := context.TODO()
+	queries := data.New(a.db)
+	err := queries.DeleteTag(ctx, a.Id())
+	return err
 }

@@ -42,21 +42,21 @@ func (h *documentHandler) templateRequest(w http.ResponseWriter, req *http.Reque
 	h.renderDocument(w, doc)
 }
 
-func (h *documentHandler) renderDocument(w http.ResponseWriter, doc *document.Document) {
+func (h *documentHandler) renderDocument(w http.ResponseWriter, doc document.Document) {
 	err := h.templates.ExecuteTemplate(w, "document", doc)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
 	}
 }
 
-func (h *documentHandler) getReqDoc(req *http.Request) *document.Document {
+func (h *documentHandler) getReqDoc(req *http.Request) document.Document {
 	id, err := strconv.Atoi(req.PathValue("document"))
 	if err != nil {
-		return nil
+		return document.Document{}
 	}
-	doc, err := h.documentStore.GetById(id)
+	doc, err := h.documentStore.GetById(int64(id))
 	if err != nil {
-		return nil
+		return document.Document{}
 	}
 	return doc
 }
@@ -67,11 +67,8 @@ func (h *documentHandler) downloadDocument(w http.ResponseWriter, req *http.Requ
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
 	w.Header().Set("Content-Type", "text/markdown")
 	w.WriteHeader(http.StatusOK)
-	content, err := doc.Content()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
-	}
-	_, err = w.Write([]byte(content))
+	content := doc.Content()
+	_, err := w.Write([]byte(content))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
 	}
@@ -81,12 +78,11 @@ func (h *documentHandler) createDocument(w http.ResponseWriter, req *http.Reques
 	title := req.PostFormValue("title")
 	content := req.PostFormValue("content")
 	tags := h.getTagsFromReq(req)
-	doc := document.CreateProto(func(df *document.DocumentFeilds) {
-		df.Title = title
-		df.Content = content
-		df.Tags = tags
+	doc, err := h.documentStore.Add(document.ProtoDocument{
+		Title:   title,
+		Content: content,
+		Tags:    tags,
 	})
-	err := h.documentStore.Add(doc)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
@@ -94,13 +90,12 @@ func (h *documentHandler) createDocument(w http.ResponseWriter, req *http.Reques
 	}
 	h.renderDocument(w, doc)
 }
-func (h *documentHandler) getTagsFromReq(req *http.Request) []tag.Tag {
+func (h *documentHandler) getTagsFromReq(req *http.Request) []tag.ProtoTag {
 	tagValues := strings.Split(req.PostFormValue("tags"), ",")
-	tags := make([]tag.Tag, len(tagValues))
+	tags := make([]tag.ProtoTag, len(tagValues))
 	for i, tv := range tagValues {
-		t, err := h.tagStore.GetByValue(tv)
-		if err == nil {
-			tags[i] = t
+		tags[i] = tag.ProtoTag{
+			Value: tv,
 		}
 	}
 	return tags
@@ -119,7 +114,7 @@ func (h *documentHandler) updateDocument(w http.ResponseWriter, req *http.Reques
 		content = req.PostFormValue("content")
 	}
 	tags := h.getTagsFromReq(req)
-	err = doc.Update(func(df *document.DocumentFeilds) {
+	err = doc.Update(func(df *document.ProtoDocument) {
 		df.Title = title
 		df.Content = content
 		df.Tags = tags
@@ -135,7 +130,7 @@ func (h *documentHandler) updateDocument(w http.ResponseWriter, req *http.Reques
 
 func (h *documentHandler) deleteDocument(w http.ResponseWriter, req *http.Request) {
 	doc := h.getReqDoc(req)
-	err := h.documentStore.Remove(doc)
+	err := doc.Delete()
 	// Failed to delete
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)

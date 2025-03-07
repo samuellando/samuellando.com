@@ -1,6 +1,10 @@
 ALTER TABLE document
 ALTER COLUMN created SET NOT NULL;
 
+UPDATE tag
+SET color = 'white'
+WHERE color IS NULL;
+
 ALTER TABLE tag
 ALTER COLUMN color SET DEFAULT 'white',
 ALTER COLUMN color SET NOT NULL;

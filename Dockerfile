@@ -44,7 +44,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o goapp ./cmd/web
 # Build wasm
 RUN GOOS=js GOARCH=wasm go build -o static/main.wasm ./wasm
 
-FROM scratch as run
+FROM gcr.io/distroless/static as run
 
 WORKDIR /app
 # Copy the application executable from the build image

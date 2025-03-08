@@ -99,7 +99,13 @@ func main() {
 				if err != nil {
 					filtered = projectStore
 				}
-				groups, err := filtered.Group(func(p project.Project) string {
+				sorted, err := filtered.Sort(func(p1, p2 project.Project) bool {
+					return p1.Pushed().After(p2.Pushed())
+				})
+				if err != nil {
+					sorted = filtered
+				}
+				groups, err := sorted.Group(func(p project.Project) string {
 					return p.Pushed().Format("2006")
 				})
 				if err != nil {

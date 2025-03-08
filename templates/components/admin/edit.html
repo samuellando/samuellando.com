@@ -1,11 +1,11 @@
 <div>
-    {{if .Admin}}
-    {{$document := .GetDocument}}
+    {{if (.Get "Admin")}}
+    {{$document := (.Get "Document")}}
     {{if ne $document nil}}
     <hr />
     <h2>Admin</h2>
     <div>
-        <form hx-encoding='multipart/form-data' hx-put="/document/{{.Reference}}" hx-target="#document"
+        <form hx-encoding='multipart/form-data' hx-put='/document/{{(.Get "Reference")}}' hx-target="#document"
             hx-trigger="input from:[type='text'] delay:500ms, input from:textarea delay:500ms">
             <label>Title </label>
             <input name="title" type="text" value="{{$document.Title}}" /><br />
@@ -19,10 +19,10 @@
             </a>
             <label>Tags </label>
             <input name="tags" type="text" value='{{joinTags $document.Tags ","}}' /><br />
-            <button hx-put="/document/{{.Reference}}" hx-on:htmx:after-request="location.reload()" type="submit">Update</button>
+            <button hx-put='/document/{{(.Get "Reference")}}' hx-on:htmx:after-request="location.reload()" type="submit">Update</button>
         </form>
     </div>
-    <button hx-delete="/document/{{.Reference}}" hx-target="body" hx-push-url="true">
+    <button hx-delete='/document/{{(.Get "Reference")}}' hx-target="body" hx-push-url="true">
         Delete this Document
     </button>
     <hr />

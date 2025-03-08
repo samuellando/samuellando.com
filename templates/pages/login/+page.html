@@ -1,4 +1,4 @@
-{{if .Admin}}
+{{if (.Get "Admin")}}
 <form method="post" action="/deauth" hx-post="/deauth" hx-push-url="true" hx-target="body">
     <button type="submit">Log Out</button>
 </form>

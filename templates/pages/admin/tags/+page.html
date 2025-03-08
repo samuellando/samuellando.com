@@ -4,7 +4,7 @@
         <th>Color</th>
         <th>Delete</th>
     </tr>
-    {{range .TagStore.GetAll}}
+    {{range (.Get "TagStore").GetAll}}
     <tr>
         <td>{{.Value}}</td>
         <td {{if ne .Color nil}}style="background: {{.Color}};" {{end}}>

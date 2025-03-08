@@ -7,16 +7,15 @@ import (
 	"strings"
 
 	"github.com/samuellando/gositter"
-	gotemp "html/template"
-	"samuellando.com/internal/template"
+	"html/template"
 )
 
 //go:embed markdown_components
 var embeded embed.FS
 
-var COMPONENTS = template.New("components").ParseFs(embeded)
+var COMPONENTS, LOAD_ERR = template.New("").ParseFS(embeded, "markdown_components/*")
 
-func ToHtml(md string) (gotemp.HTML, error) {
+func ToHtml(md string) (template.HTML, error) {
 	tree, err := G.Parse(md)
 	if err != nil {
 		return "", err
@@ -26,7 +25,7 @@ func ToHtml(md string) (gotemp.HTML, error) {
 
 type a struct {
 	Href  string
-	Inner gotemp.HTML
+	Inner template.HTML
 }
 
 type img struct {
@@ -37,7 +36,7 @@ type img struct {
 }
 
 type list struct {
-	Lis []gotemp.HTML
+	Lis []template.HTML
 }
 
 func parseTags(out io.Writer, t gositter.SyntaxTree) error {
@@ -49,7 +48,7 @@ func parseTags(out io.Writer, t gositter.SyntaxTree) error {
 	}
 	// Otherwise check if there is an exiting template
 	var tag string
-	var data interface{}
+	var data any
 	var err error
 	switch t.Tag() {
 	case "header":
@@ -73,12 +72,12 @@ func parseTags(out io.Writer, t gositter.SyntaxTree) error {
 		sub := t.Nodes()[0]
 		data, err = parseTree(sub)
 	case "a":
-		var inner gotemp.HTML
+		var inner template.HTML
 		ht := t.Find("href")[0]
 		imgs := t.Find("img")
 		if len(imgs) == 0 {
 			at := t.Find("alt")[0]
-			inner = gotemp.HTML(at.Value())
+			inner = template.HTML(at.Value())
 		} else {
 			inner, err = parseTree(imgs[0])
 		}
@@ -100,7 +99,7 @@ func parseTags(out io.Writer, t gositter.SyntaxTree) error {
 	case "ul", "ol":
 		lis := t.Find("li")
 		list := new(list)
-		var inner gotemp.HTML
+		var inner template.HTML
 		for _, li := range lis {
 			inner, err = parseTree(li)
 			if err != nil {
@@ -127,8 +126,12 @@ func parseTags(out io.Writer, t gositter.SyntaxTree) error {
 	return COMPONENTS.ExecuteTemplate(out, tag, data)
 }
 
-func parseTree(t gositter.SyntaxTree) (gotemp.HTML, error) {
+func parseTree(t gositter.SyntaxTree) (template.HTML, error) {
+	if LOAD_ERR != nil {
+		var zero template.HTML
+		return zero, LOAD_ERR
+	}
 	s := new(strings.Builder)
 	err := parseTags(s, t)
-	return gotemp.HTML(s.String()), err
+	return template.HTML(s.String()), err
 }

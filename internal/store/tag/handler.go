@@ -1,20 +1,16 @@
-package main
+package tag
 
 import (
 	"fmt"
 	"net/http"
 	"strconv"
-
-	"samuellando.com/internal/store/tag"
-	"samuellando.com/internal/template"
 )
 
-type tagHandler struct {
-	Store     *tag.Store
-	Templates template.Template
+type Handler struct {
+	Store Store
 }
 
-func (h *tagHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case "PATCH":
 		h.updateTag(w, req)
@@ -23,7 +19,7 @@ func (h *tagHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *tagHandler) updateTag(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) updateTag(w http.ResponseWriter, req *http.Request) {
 	ids := req.PathValue("tag")
 	id, err := strconv.Atoi(ids)
 	if err != nil {
@@ -35,7 +31,7 @@ func (h *tagHandler) updateTag(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	color := req.FormValue("color")
-	err = t.Update(func(tf *tag.ProtoTag) {
+	err = t.Update(func(tf *ProtoTag) {
 		tf.Color = color
 	})
 	if err != nil {
@@ -44,7 +40,7 @@ func (h *tagHandler) updateTag(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *tagHandler) deleteTag(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) deleteTag(w http.ResponseWriter, req *http.Request) {
 	ids := req.PathValue("tag")
 	id, err := strconv.Atoi(ids)
 	if err != nil {

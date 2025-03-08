@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 
 	"samuellando.com/internal/auth"
@@ -30,70 +31,163 @@ var (
 	DB_NAME     = os.Getenv("DB_NAME")
 )
 
+var TEMPLATE_FUNCTIONS = template.FuncMap{
+	"join": strings.Join,
+	"joinTags": func(tags []tag.ProtoTag, sep string) string {
+		w := new(strings.Builder)
+		for i, t := range tags {
+			w.WriteString(t.Value)
+			if i < len(tags)-1 {
+				w.WriteString(sep)
+			}
+		}
+		return w.String()
+	},
+	"byTag": func(needs string) func(document.Document) bool {
+		return func(d document.Document) bool {
+			for _, t := range d.Tags() {
+				if t.Value == needs {
+					return true
+				}
+			}
+			return false
+		}
+	},
+	"arr": func(els ...any) []any {
+		return els
+	},
+	"includes": func(s string, arr []string) bool {
+		return slices.Contains(arr, s)
+	},
+}
+
 func main() {
-	templates := template.New("templates").Funcs(template.FuncMap{
-		"join": strings.Join,
-		"joinTags": func(tags []tag.ProtoTag, sep string) string {
-			w := new(strings.Builder)
-			for i, t := range tags {
-				w.WriteString(t.Value)
-				if i < len(tags)-1 {
-					w.WriteString(sep)
-				}
-			}
-			return w.String()
-		},
-		"byTag": func(needs string) func(document.Document) bool {
-			return func(d document.Document) bool {
-				for _, t := range d.Tags() {
-					if t.Value == needs {
-						return true
-					}
-				}
-				return false
-			}
-		},
-		"arr": func(els ...any) []any {
-			return els
-		},
-		"includes": func(s string, arr []string) bool {
-			return slices.Contains(arr, s)
-		},
-	}).ParseTemplates(TEMPLATE_DIR)
+	templates := template.New("templates").Funcs(TEMPLATE_FUNCTIONS).ParseTemplates(TEMPLATE_DIR)
 	db := db.ConnectPostgres(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME,
 		func(o *db.Options) {
+			// Crash as soon as possible in case of a db connection/migrations issue.
 			o.RetrySecs = -1
 		})
 	defer db.Close()
+
 	documentStore := document.CreateStore(db)
 	projectStore := project.CreateStore(db)
 	assetStore := asset.CreateStore(db)
 	tagStore := tag.CreateStore(db)
 
-	th := templateHandler{
-		templates:     *templates,
+	th := template.Handler{
+		Templates: *templates,
+		// At this point, we throw away type safety for convinience on the frontend.
+		ContextValues: template.ContextValues{
+			"DocumentStore": func(ctx template.Context) any { return documentStore },
+			"ProjectStore":  func(ctx template.Context) any { return projectStore },
+			"ProjectGroups": func(ctx template.Context) any {
+				filterTags := ctx.Get("FilterTags").([]string)
+				filtered, err := projectStore.Filter(func(p project.Project) bool {
+					if len(filterTags) == 0 {
+						return true
+					}
+					for _, t := range filterTags {
+						for _, pt := range p.Tags() {
+							if pt.Value == t {
+								return true
+							}
+						}
+					}
+					return false
+				})
+				if err != nil {
+					filtered = projectStore
+				}
+				groups, err := filtered.Group(func(p project.Project) string {
+					return p.Pushed().Format("2006")
+				})
+				if err != nil {
+					return nil
+				}
+				return groups
+			},
+			"AssetStore": func(ctx template.Context) any { return assetStore },
+			"TagStore":   func(ctx template.Context) any { return tagStore },
+			"Admin": func(ctx template.Context) any {
+				return auth.IsAuthenticated(ctx.Get("Req").(*http.Request))
+			},
+			"Reference": func(ctx template.Context) any {
+				path := ctx.Get("Page").(string)
+				parts := strings.Split(path, "/")
+				ref := parts[len(parts)-1]
+				id, err := strconv.Atoi(ref)
+				if err != nil {
+					return -1
+				}
+				return id
+			},
+			"Document": func(ctx template.Context) any {
+				id := ctx.Get("Reference").(int)
+				doc, err := documentStore.GetById(int64(id))
+				if err != nil {
+					return nil
+				}
+				return doc
+			},
+			"Project": func(ctx template.Context) any {
+				id := ctx.Get("Reference").(int)
+				proj, err := projectStore.GetById(int64(id))
+				if err != nil {
+					return nil
+				}
+				return proj
+			},
+			"FilterTags": func(ctx template.Context) any {
+				req := ctx.Get("Req").(*http.Request)
+				err := req.ParseForm()
+				if err != nil {
+					return []string{}
+				}
+				if f, ok := req.Form["filter-tag"]; ok {
+					return f
+				} else {
+					return []string{}
+				}
+			},
+		},
+	}
+
+	ah := asset.Handler{
+		Store: assetStore,
+	}
+	tagh := tag.Handler{
+		Store: tagStore,
+	}
+
+	docTemplate := templates.Lookup("document")
+	if docTemplate == nil {
+		panic("Must define document template")
+	}
+	dh := document.Handler{
+		Template:      *docTemplate,
 		DocumentStore: documentStore,
-		ProjectStore:  projectStore,
-		AssetStore:    assetStore,
 		TagStore:      tagStore,
 	}
-	ah := assetHandler{
-		Store:     &assetStore,
-		Templates: *templates,
+
+	projTemplate := templates.Lookup("project")
+	if projTemplate == nil {
+		panic("Must define project template")
 	}
-	tagh := tagHandler{
-		Store: &tagStore,
+	ph := project.Handler{
+		Template:     *projTemplate,
+		ProjectStore: projectStore,
+		TagStore:     tagStore,
 	}
-	dh := documentHandler{
-		templates:     *templates,
-		documentStore: documentStore,
-		tagStore:      tagStore,
+
+	searchResultTemplate := templates.Lookup("search-result")
+	if searchResultTemplate == nil {
+		panic("Must define search result template")
 	}
-	ph := projectHandler{
-		templates:    *templates,
-		projectStore: projectStore,
-		tagStore:     tagStore,
-	}
+	sh := search.CreateSearchHandler(
+		*searchResultTemplate,
+		search.GenerateIndex("Project", "/project", &projectStore),
+	)
 
 	// Handling static assets
 	static_hander := http.StripPrefix(STATIC_PREFIX, http.FileServer(http.Dir(STATIC_DIR)))
@@ -102,30 +196,19 @@ func main() {
 	http.HandleFunc("POST /auth", middleware.LoggingFunc(auth.Authenticate))
 	http.HandleFunc("POST /deauth", middleware.LoggingFunc(auth.Deauthenticate))
 	// Search endpoint
-	searchResultTemplate := templates.Lookup("search-result")
-	if searchResultTemplate == nil {
-		panic("Must define search result template")
-	}
-	http.HandleFunc("GET /search", middleware.LoggingFunc(
-		search.CreateSearchHandler(
-			*searchResultTemplate,
-			search.GenerateIndex("Project", "/project", &projectStore),
-		)))
-	// Template
+	http.HandleFunc("GET /search", middleware.LoggingFunc(sh))
+	// In general, everything should get served by the template handler.
 	http.Handle("GET /", middleware.Logging(&th))
+	// Handling user assets
+	http.Handle("GET /asset/{asset}", middleware.Logging(&ah))
+	http.Handle("POST /asset", middleware.Logging(middleware.Authenticated(&ah)))
+	http.Handle("DELETE /asset/{asset}", middleware.Logging(middleware.Authenticated(&ah)))
 	// Document actions
-	http.Handle("GET /document/{document}", middleware.Logging(&dh))
 	http.Handle("POST /document", middleware.Logging(middleware.Authenticated(&dh)))
 	http.Handle("PUT /document/{document}", middleware.Logging(middleware.Authenticated(&dh)))
 	http.Handle("DELETE /document/{document}", middleware.Logging(middleware.Authenticated(&dh)))
 	// Project actions
-	http.Handle("GET /project/{project}", middleware.Logging(&ph))
 	http.Handle("PUT /project/{project}", middleware.Logging(middleware.Authenticated(&ph)))
-	// Handling user assets
-	http.Handle("GET /asset", middleware.Logging(&ah))
-	http.Handle("POST /asset", middleware.Logging(middleware.Authenticated(&ah)))
-	http.Handle("GET /asset/{asset}", middleware.Logging(&ah))
-	http.Handle("DELETE /asset/{asset}", middleware.Logging(middleware.Authenticated(&ah)))
 	// Handling tag edits
 	http.Handle("PATCH /tag/{tag}", middleware.Logging(middleware.Authenticated(&tagh)))
 	http.Handle("DELETE /tag/{tag}", middleware.Logging(middleware.Authenticated(&tagh)))

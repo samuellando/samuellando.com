@@ -1,4 +1,4 @@
-package main
+package document
 
 import (
 	"bufio"
@@ -9,18 +9,17 @@ import (
 	"strconv"
 	"strings"
 
-	"samuellando.com/internal/store/document"
+	"html/template"
 	"samuellando.com/internal/store/tag"
-	"samuellando.com/internal/template"
 )
 
-type documentHandler struct {
-	templates     template.Template
-	documentStore document.Store
-	tagStore      tag.Store
+type Handler struct {
+	Template      template.Template
+	DocumentStore Store
+	TagStore      tag.Store
 }
 
-func (h *documentHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case "GET":
 		if req.FormValue("download") != "" {
@@ -37,31 +36,31 @@ func (h *documentHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *documentHandler) templateRequest(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) templateRequest(w http.ResponseWriter, req *http.Request) {
 	doc := h.getReqDoc(req)
 	h.renderDocument(w, doc)
 }
 
-func (h *documentHandler) renderDocument(w http.ResponseWriter, doc document.Document) {
-	err := h.templates.ExecuteTemplate(w, "document", doc)
+func (h *Handler) renderDocument(w http.ResponseWriter, doc Document) {
+	err := h.Template.Execute(w, doc)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("%s : %s", http.StatusText(500), err), 500)
 	}
 }
 
-func (h *documentHandler) getReqDoc(req *http.Request) document.Document {
+func (h *Handler) getReqDoc(req *http.Request) Document {
 	id, err := strconv.Atoi(req.PathValue("document"))
 	if err != nil {
-		return document.Document{}
+		return Document{}
 	}
-	doc, err := h.documentStore.GetById(int64(id))
+	doc, err := h.DocumentStore.GetById(int64(id))
 	if err != nil {
-		return document.Document{}
+		return Document{}
 	}
 	return doc
 }
 
-func (h *documentHandler) downloadDocument(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) downloadDocument(w http.ResponseWriter, req *http.Request) {
 	doc := h.getReqDoc(req)
 	filename := fmt.Sprintf("%s.md", doc.Title())
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
@@ -74,11 +73,11 @@ func (h *documentHandler) downloadDocument(w http.ResponseWriter, req *http.Requ
 	}
 }
 
-func (h *documentHandler) createDocument(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) createDocument(w http.ResponseWriter, req *http.Request) {
 	title := req.PostFormValue("title")
 	content := req.PostFormValue("content")
 	tags := h.getTagsFromReq(req)
-	doc, err := h.documentStore.Add(document.ProtoDocument{
+	doc, err := h.DocumentStore.Add(ProtoDocument{
 		Title:   title,
 		Content: content,
 		Tags:    tags,
@@ -90,7 +89,7 @@ func (h *documentHandler) createDocument(w http.ResponseWriter, req *http.Reques
 	}
 	h.renderDocument(w, doc)
 }
-func (h *documentHandler) getTagsFromReq(req *http.Request) []tag.ProtoTag {
+func (h *Handler) getTagsFromReq(req *http.Request) []tag.ProtoTag {
 	tagValues := strings.Split(req.PostFormValue("tags"), ",")
 	tags := make([]tag.ProtoTag, len(tagValues))
 	for i, tv := range tagValues {
@@ -101,7 +100,7 @@ func (h *documentHandler) getTagsFromReq(req *http.Request) []tag.ProtoTag {
 	return tags
 }
 
-func (h *documentHandler) updateDocument(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) updateDocument(w http.ResponseWriter, req *http.Request) {
 	doc := h.getReqDoc(req)
 	title := req.PostFormValue("title")
 	content, err, err_code := getUploadContent(req)
@@ -114,7 +113,7 @@ func (h *documentHandler) updateDocument(w http.ResponseWriter, req *http.Reques
 		content = req.PostFormValue("content")
 	}
 	tags := h.getTagsFromReq(req)
-	err = doc.Update(func(df *document.ProtoDocument) {
+	err = doc.Update(func(df *ProtoDocument) {
 		df.Title = title
 		df.Content = content
 		df.Tags = tags
@@ -128,7 +127,7 @@ func (h *documentHandler) updateDocument(w http.ResponseWriter, req *http.Reques
 	h.renderDocument(w, doc)
 }
 
-func (h *documentHandler) deleteDocument(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) deleteDocument(w http.ResponseWriter, req *http.Request) {
 	doc := h.getReqDoc(req)
 	err := doc.Delete()
 	// Failed to delete

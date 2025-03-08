@@ -11,7 +11,7 @@
         <th>Link</th>
         <th>Delete</th>
     </tr>
-    {{range .AssetStore.GetAll}}
+    {{range (.Get "AssetStore").GetAll}}
     <tr>
         <td>{{.Name}}</td>
         <td>{{.Created}}</td>

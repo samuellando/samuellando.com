@@ -2,7 +2,7 @@
     {{template "navitem" (arr "/" "home")}}
     {{template "navitem" (arr "/projects" "projects")}}
     {{template "navitem" (arr "/contact" "contact")}}
-    {{if .Admin}}
+    {{if (.Get "Admin")}}
     <span>Admin Links:</span>
     {{template "navitem" (arr "/admin/documents" "documents")}}
     {{template "navitem" (arr "/admin/assets" "assets")}}

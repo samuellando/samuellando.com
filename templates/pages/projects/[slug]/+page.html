@@ -1,7 +1,0 @@
-{{$project := .GetProject}}
-<h3>{{$project.Title}}</h3>
-<ul>
-    {{range (.DocumentStore.Filter (byTag $project.Title)).GetAll}}
-    <li><a href="/writing/{{.Id}}">{{.Title}}</a></li>
-    {{end}}
-</ul>

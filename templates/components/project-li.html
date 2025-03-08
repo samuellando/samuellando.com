@@ -4,7 +4,7 @@
     <div class="project-info">
         {{template "project" $project}}
     </div>
-    {{if $ctxt.Admin}}
+    {{if ($ctxt.Get "Admin")}}
     <form hx-put="/project/{{$project.Id}}" hx-target="previous .project-info">
         <label>Description </label>
         <input name="description" type="text" value="{{$project.Description}}" /><br />

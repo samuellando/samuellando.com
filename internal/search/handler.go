@@ -1,8 +1,8 @@
 package search
 
 import (
+	"html/template"
 	"net/http"
-	"samuellando.com/internal/template"
 )
 
 func CreateSearchHandler(t template.Template, indexes ...indexFunc) http.HandlerFunc {

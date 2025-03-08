@@ -72,12 +72,8 @@ func (temps *Template) Funcs(funcs FuncMap) *Template {
 	return temps
 }
 
-func (temps *Template) Lookup(name string) *Template {
-	t := temps.templates.Lookup(name)
-	if t == nil {
-		return nil
-	}
-	return &Template{templates: t}
+func (temps *Template) Lookup(name string) *template.Template {
+	return temps.templates.Lookup(name)
 }
 
 func (temps *Template) Execute(wr io.Writer, data any) error {

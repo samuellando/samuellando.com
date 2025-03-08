@@ -1,4 +1,4 @@
-{{$doc := (index (.DocumentStore.Filter (byTag "bio")).GetAll 0)}}
+{{$doc := (index ((.Get "DocumentStore").Filter (byTag "bio")).GetAll 0)}}
 <div class="text-center mt-20">
     {{$doc.Html}}
 </div>

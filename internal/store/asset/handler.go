@@ -1,21 +1,17 @@
-package main
+package asset
 
 import (
 	"bufio"
 	"fmt"
 	"io"
 	"net/http"
-
-	"samuellando.com/internal/store/asset"
-	"samuellando.com/internal/template"
 )
 
-type assetHandler struct {
-	Store     *asset.Store
-	Templates template.Template
+type Handler struct {
+	Store Store
 }
 
-func (h *assetHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case "GET":
 		h.getAsset(w, req)
@@ -26,14 +22,10 @@ func (h *assetHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *assetHandler) getAsset(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) getAsset(w http.ResponseWriter, req *http.Request) {
 	name := req.PathValue("asset")
 	if name == "" {
-		err := h.Templates.ExecuteTemplate(w, "assets", h.Store)
-		if err != nil {
-			http.Error(w, fmt.Sprint(err), 500)
-			return
-		}
+		http.Error(w, "asset name must be provided", 404)
 	} else {
 		asset, err := h.Store.GetByName(name)
 		if err != nil {
@@ -49,7 +41,7 @@ func (h *assetHandler) getAsset(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *assetHandler) createAsset(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) createAsset(w http.ResponseWriter, req *http.Request) {
 	const max_file_size = int64(4000000)
 	f, header, err := req.FormFile("file")
 	// If there is no file
@@ -74,7 +66,7 @@ func (h *assetHandler) createAsset(w http.ResponseWriter, req *http.Request) {
 			break
 		}
 	}
-	_, err = h.Store.Add(asset.ProtoAsset{
+	_, err = h.Store.Add(ProtoAsset{
 		Name:    header.Filename,
 		Content: buff,
 	})
@@ -84,7 +76,7 @@ func (h *assetHandler) createAsset(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *assetHandler) deleteAsset(w http.ResponseWriter, req *http.Request) {
+func (h *Handler) deleteAsset(w http.ResponseWriter, req *http.Request) {
 	name := req.PathValue("asset")
 	asset, err := h.Store.GetByName(name)
 	if err != nil {

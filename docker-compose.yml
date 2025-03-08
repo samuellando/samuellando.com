@@ -15,8 +15,6 @@ services:
       watch:
         - action: rebuild
           path: ./cmd/wasm
-        - action: rebuild
-          path: ./queries/
         - action: sync+restart
           path: .
           target: /app

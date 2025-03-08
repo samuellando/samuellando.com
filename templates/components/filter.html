@@ -1,6 +1,6 @@
 {{ $ctxt := index . 0 }}
 {{ $tags := index . 1 }}
-<form hx-get="?" hx-trigger="input" hx-target="body" hx-push-url="true" class="flex flex-wrap gap-2">
+<form hx-get="?" hx-trigger="input" hx-target="body" hx-push-url="true" class="flex flex-wrap gap-5">
     {{range $tags}}
     {{$color := .Color}}
     {{if eq $color nil}}

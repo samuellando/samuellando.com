@@ -2,6 +2,10 @@ FROM golang:1.23
 
 WORKDIR /app
 
+# Some build dependencies
+RUN apt update && apt install npm -y
+COPY --from=sqlc/sqlc:1.28.0 /workspace/sqlc /usr/bin/sqlc
+
 # Copy the Go module files
 COPY go.mod .
 COPY go.sum .
@@ -12,11 +16,12 @@ RUN go mod download
 # Copy everything
 COPY . .
 
-# Generate sqlc
-COPY --from=sqlc/sqlc:1.28.0 /workspace/sqlc /usr/bin/sqlc
-RUN sqlc generate
+RUN npm install
+
 # Build the wasm
 RUN GOOS=js GOARCH=wasm go build -o static/main.wasm ./wasm
 
 EXPOSE 8080
-CMD ["go", "run", "./cmd/web"]
+CMD sqlc generate && \ 
+    npx tailwindcss -i ./static/input.css -o ./static/output.css --minify && \
+    go run ./cmd/web

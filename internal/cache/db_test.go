@@ -14,7 +14,7 @@ func TestDbCacheGet_Hit(t *testing.T) {
 	key := "test_key"
 	value := []byte("test_value")
 	validTo := time.Now().Add(time.Hour)
-	_, err := db.Exec(`INSERT INTO cache (cache_key, cache_value, validto) VALUES ($1, $2, $3)`, key, value, validTo)
+	_, err := db.Exec(`INSERT INTO cache (cache_key, cache_value, valid_to) VALUES ($1, $2, $3)`, key, value, validTo)
 	if err != nil {
 		t.Fatalf("Failed to insert cache entry: %v", err)
 	}
@@ -62,7 +62,7 @@ func TestDbCacheUpdate_Insert(t *testing.T) {
 
 	var dbValue []byte
 	var dbValidTo time.Time
-	err := db.QueryRow(`SELECT cache_value, validto FROM cache WHERE cache_key = $1`, key).Scan(&dbValue, &dbValidTo)
+	err := db.QueryRow(`SELECT cache_value, valid_to FROM cache WHERE cache_key = $1`, key).Scan(&dbValue, &dbValidTo)
 	if err != nil {
 		t.Fatalf("Failed to retrieve cache entry: %v", err)
 	}
@@ -81,7 +81,7 @@ func TestDbCacheUpdate_Update(t *testing.T) {
 	validTo := time.Now().Add(time.Hour)
 
 	// Insert initial cache entry
-	_, err := db.Exec(`INSERT INTO cache (cache_key, cache_value, validto) VALUES ($1, $2, $3)`, key, initialValue, validTo)
+	_, err := db.Exec(`INSERT INTO cache (cache_key, cache_value, valid_to) VALUES ($1, $2, $3)`, key, initialValue, validTo)
 	if err != nil {
 		t.Fatalf("Failed to insert initial cache entry: %v", err)
 	}

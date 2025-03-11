@@ -1,2 +1,8 @@
-{{template "edit" .}}
-{{template "document" (.Get "Document")}}
+<div class="flex flex-row">
+    <div class="basis-2/3">
+        {{template "document" (.Get "Document")}}
+    </div>
+    <div class="basis-1/3">
+        {{template "edit" .}}
+    </div>
+</div>

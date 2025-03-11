@@ -7,9 +7,9 @@
     {{range (.Get "TagStore").GetAll}}
     <tr>
         <td>{{.Value}}</td>
-        <td {{if ne .Color nil}}style="background: {{.Color}};" {{end}}>
+        <td>
             <form hx-patch="/tag/{{.Id}}" hx-on::after-request="location.reload()">
-                <input name="color" type="text" value="{{if ne .Color nil}}{{.Color}}{{end}}" />
+                <input name="color" {{if ne .Color nil}}style="background: {{.Color}};" {{end}} type="text" value="{{if ne .Color nil}}{{.Color}}{{end}}" />
                 <button hx-swap="none">Update</button>
             </form>
         </td>

@@ -12,6 +12,25 @@
 }
 
 @layer base {
+    input[type=text], 
+    input[type=password],
+    input[type=submit],
+    button,
+    textarea,
+    input::file-selector-button {
+        @apply border;
+    }
+
+    table {
+        @apply table-auto;
+        @apply w-screen;
+        border-collapse: collapse;
+    }
+
+    table, th, td {
+        @apply border;
+    }
+
     .md-a {
         @apply underline;
         @apply text-blue-500;

@@ -22,7 +22,9 @@ LEFT JOIN tag t ON pt.tag = t.id
 ORDER BY p.id, t.value;
 
 -- name: UpdateProject :exec
-INSERT INTO project (id, description) 
-VALUES ($1, $2)
+INSERT INTO project (id, description, image_link, hidden) 
+VALUES ($1, $2, $3, $4)
 ON CONFLICT (id) DO UPDATE
-SET description = $2;
+SET description = $2,
+image_link = $3,
+hidden = $4;

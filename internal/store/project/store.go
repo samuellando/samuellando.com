@@ -251,12 +251,18 @@ func getInternalProjectData(ctx context.Context, queries *data.Queries, id int64
 		}
 	}
 	var desc *string
+	var imageLink *string
 	if rows[0].Project.Description.Valid {
 		desc = &rows[0].Project.Description.String
+	}
+	if rows[0].Project.ImageLink.Valid {
+		imageLink = &rows[0].Project.ImageLink.String
 	}
 	return Project{
 		id:          rows[0].Project.ID,
 		description: desc,
+		imageLink:   imageLink,
+		hidden:      rows[0].Project.Hidden,
 		tags:        tags,
 	}, nil
 }
@@ -270,12 +276,18 @@ func getAllInternalProjectData(ctx context.Context, queries *data.Queries) (map[
 	for _, row := range docRows {
 		if _, ok := projs[row.Project.ID]; !ok {
 			var desc *string
+			var imageLink *string
 			if row.Project.Description.Valid {
 				desc = &row.Project.Description.String
+			}
+			if row.Project.ImageLink.Valid {
+				imageLink = &row.Project.ImageLink.String
 			}
 			projs[row.Project.ID] = &Project{
 				id:          row.Project.ID,
 				description: desc,
+				imageLink:   imageLink,
+				hidden:      row.Project.Hidden,
 				tags:        make([]tag.ProtoTag, 0),
 			}
 		}
@@ -307,5 +319,7 @@ func coallesceProjectData(internal, external Project) Project {
 		created:     external.created,
 		pushed:      external.pushed,
 		url:         external.url,
+		imageLink:   internal.imageLink,
+		hidden:      internal.hidden,
 	}
 }

@@ -1,6 +1,10 @@
 <a href="{{.Url}}">
     <div class="relative overflow-hidden border rounded-2xl w-full">
-        <img class="w-full h-52 object-cover" src="/asset/20250301_15h55m24s_grim.png" alt="project-thumbnail">
+        {{if ne .ImageLink nil}}
+        <img class="w-full h-52 object-cover" 
+            src="{{.ImageLink}}"
+            alt="project-thumbnail"/>
+        {{end}}
         <div class="w-full p-3 mt-3 flex flex-col h-52 justify-between">
             <div>
                 <h4 

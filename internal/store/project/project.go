@@ -18,12 +18,16 @@ type Project struct {
 	pushed      time.Time
 	url         string
 	description *string
+	imageLink   *string
+	hidden      bool
 	tags        []tag.ProtoTag
 }
 
 type ProtoProject struct {
 	Description *string
 	Tags        []tag.ProtoTag
+	ImageLink   *string
+	Hidden      bool
 }
 
 func (p Project) Id() int64 {
@@ -53,6 +57,14 @@ func (p Project) Url() string {
 	return p.url
 }
 
+func (p Project) Hidden() bool {
+	return p.hidden
+}
+
+func (p Project) ImageLink() *string {
+	return p.imageLink
+}
+
 func (p Project) Tags() []tag.ProtoTag {
 	return copyOf(p.tags)
 }
@@ -62,6 +74,8 @@ func (p *Project) Update(setters ...func(*ProtoProject)) error {
 	proto := ProtoProject{
 		Description: &desc,
 		Tags:        p.Tags(),
+		Hidden:      p.Hidden(),
+		ImageLink:   p.ImageLink(),
 	}
 	for _, setter := range setters {
 		setter(&proto)
@@ -75,12 +89,18 @@ func (p *Project) Update(setters ...func(*ProtoProject)) error {
 	}
 	queries := data.New(p.db).WithTx(tx)
 	sqldesc := sql.NullString{Valid: false}
+	sqlimage := sql.NullString{Valid: false}
 	if proto.Description != nil {
 		sqldesc = sql.NullString{Valid: true, String: *proto.Description}
+	}
+	if proto.ImageLink != nil {
+		sqlimage = sql.NullString{Valid: true, String: *proto.ImageLink}
 	}
 	err = queries.UpdateProject(ctx, data.UpdateProjectParams{
 		ID:          p.id,
 		Description: sqldesc,
+		ImageLink:   sqlimage,
+		Hidden:      proto.Hidden,
 	})
 	if err != nil {
 		return err

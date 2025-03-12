@@ -74,7 +74,10 @@ ORDER BY value;
 -- name: GetAllProjectTags :many
 SELECT DISTINCT sqlc.embed(t)
 FROM project_tag pt
-INNER JOIN tag t ON pt.tag = t.id;
+INNER JOIN tag t ON pt.tag = t.id
+INNER JOIN project p ON p.id = pt.project
+WHERE p.hidden is false;
+
 
 -- name: GetSharedProjectTags :many
 WITH main_tag AS (

@@ -54,6 +54,9 @@ func (h *Handler) getTagsFromReq(req *http.Request) []tag.ProtoTag {
 	tagValues := strings.Split(req.PostFormValue("tags"), ",")
 	tags := make([]tag.ProtoTag, len(tagValues))
 	for i, tv := range tagValues {
+		if tv == "" {
+			continue
+		}
 		tags[i] = tag.ProtoTag{
 			Value: tv,
 		}
@@ -64,14 +67,26 @@ func (h *Handler) getTagsFromReq(req *http.Request) []tag.ProtoTag {
 func (h *Handler) updateProject(w http.ResponseWriter, req *http.Request) {
 	proj := h.getReqProject(req)
 	rdesc := req.PostFormValue("description")
+	rimage := req.PostFormValue("image")
+	rhidden := req.PostFormValue("hidden")
 	tags := h.getTagsFromReq(req)
 	var desc *string
 	if rdesc != "" {
 		desc = &rdesc
 	}
+	var image *string
+	if rimage != "" {
+		image = &rimage
+	}
+	hidden := false
+	if rhidden == "true" {
+		hidden = true
+	}
 	err := proj.Update(func(pf *ProtoProject) {
 		pf.Description = desc
+		pf.ImageLink = image
 		pf.Tags = tags
+		pf.Hidden = hidden
 	})
 	if err != nil {
 		log.Println(err)

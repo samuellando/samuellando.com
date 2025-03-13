@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	htmlTemplate "html/template"
 	"samuellando.com/internal/auth"
 	"samuellando.com/internal/db"
 	"samuellando.com/internal/middleware"
@@ -190,10 +191,7 @@ func main() {
 	if searchResultTemplate == nil {
 		panic("Must define search result template")
 	}
-	sh := search.CreateSearchHandler(
-		*searchResultTemplate,
-		search.GenerateIndex("Project", "/projects", &projectStore),
-	)
+	sh := createSearchHandler(searchResultTemplate, projectStore)
 
 	// Handling static assets
 	static_hander := http.StripPrefix(STATIC_PREFIX, http.FileServer(http.Dir(STATIC_DIR)))
@@ -220,4 +218,21 @@ func main() {
 	http.Handle("DELETE /tag/{tag}", middleware.Logging(middleware.Authenticated(&tagh)))
 
 	http.ListenAndServe(":8080", nil)
+}
+
+func createSearchHandler(template *htmlTemplate.Template, projectStore project.Store) http.HandlerFunc {
+	searchStore, err := projectStore.Filter(func(p project.Project) bool {
+		return !p.Hidden()
+	})
+	if err != nil {
+		panic(err)
+	}
+	ps, ok := searchStore.(project.Store)
+	if !ok {
+		panic("Not a project store, this should not happen")
+	}
+	return search.CreateSearchHandler(
+		*template,
+		search.GenerateIndex("Project", "/projects", &ps),
+	)
 }

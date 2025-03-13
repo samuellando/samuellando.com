@@ -192,7 +192,7 @@ func main() {
 	}
 	sh := search.CreateSearchHandler(
 		*searchResultTemplate,
-		search.GenerateIndex("Project", "/project", &projectStore),
+		search.GenerateIndex("Project", "/projects", &projectStore),
 	)
 
 	// Handling static assets

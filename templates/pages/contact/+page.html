@@ -1,2 +1,4 @@
-<h1>Get in Touch</h1>
-<p>Email: samuel.lando@aol.com</p>
+{{$doc := (index ((.Get "DocumentStore").Filter (byTag "contact")).GetAll 0)}}
+<div class="m-20">
+    {{$doc.Html}}
+</div>

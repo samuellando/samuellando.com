@@ -1,0 +1,167 @@
+name: Gitea Actions
+run-name: ${{ gitea.actor }} is running
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  format:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          check-latest: true
+          cache: true
+      - name: Check Formatting
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "Code is not formatted. Run 'gofmt -w .'"
+            exit 1
+          fi
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    env:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: actionuser
+      DB_PASSWORD: actionpassword
+      DB_NAME: testdb
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          check-latest: true
+          cache: true
+      - name: set up sqlc 
+        uses: sqlc-dev/setup-sqlc@v3
+        with:
+          sqlc-version: '1.28.0'
+      - name: Generate sqlc
+        run: sqlc generate
+      - name: Run Tests
+        run: go test -v ./...
+      - name: Run WASM Tests
+        run: GOOS=js GOARCH=wasm go test ./wasm/...
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: actionuser
+          POSTGRES_PASSWORD: actionpassword
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [test]
+    outputs:
+      IMAGE_NAME: ${{ env.IMAGE_NAME }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Get branch name
+        id: vars
+        run: |
+          BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -) # Replace '/' with '-'
+          SHORT_SHA=${GITHUB_SHA::7}
+          IMAGE_TAG=${BRANCH_NAME}-${SHORT_SHA}
+          echo "IMAGE_NAME=samuellando.com:${IMAGE_TAG}" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: docker build -t ${{ env.IMAGE_NAME }} .
+
+      - name: Set up Google Cloud authentication
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Configure Docker to use the gcloud command-line tool as a credential helper
+        run: gcloud auth configure-docker
+
+      - name: Push Docker image to Google Cloud Artifact Registry
+        run: |
+          docker tag ${{ env.IMAGE_NAME }} us-central1-docker.pkg.dev/samuellandocom/samuellando/${{ env.IMAGE_NAME }}
+          docker push us-central1-docker.pkg.dev/samuellandocom/samuellando/${{ env.IMAGE_NAME }}
+
+  build-migrations:
+    runs-on: ubuntu-latest
+    needs: [test]
+    outputs:
+      IMAGE_NAME: ${{ env.IMAGE_NAME }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Get branch name
+        id: vars
+        run: |
+          BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | tr / -) # Replace '/' with '-'
+          SHORT_SHA=${GITHUB_SHA::7}
+          IMAGE_TAG=${BRANCH_NAME}-${SHORT_SHA}
+          echo "IMAGE_NAME=migrations:${IMAGE_TAG}" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: docker build -t ${{ env.IMAGE_NAME }} -f migrations.dockerfile .
+
+      - name: Set up Google Cloud authentication
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Configure Docker to use the gcloud command-line tool as a credential helper
+        run: gcloud auth configure-docker
+
+      - name: Push Docker image to Google Cloud Artifact Registry
+        run: |
+          docker tag ${{ env.IMAGE_NAME }} us-central1-docker.pkg.dev/samuellandocom/samuellando/${{ env.IMAGE_NAME }}
+          docker push us-central1-docker.pkg.dev/samuellandocom/samuellando/${{ env.IMAGE_NAME }}
+
+
+  # migrate:
+  #   runs-on: ubuntu-latest
+  #   needs: [build-migrations]
+  #   env:
+  #     IMAGE_NAME: ${{ needs.build-migrations.outputs.IMAGE_NAME }}
+  #   steps:
+  #     - name: Set up kubectl
+  #       uses: azure/setup-kubectl@v3
+  #     - name: Configure kubectl
+  #       run: echo "${{ secrets.KUBECONFIG }}" | base64 --decode > kubeconfig
+  #     - name: Update Kubernetes deployment
+  #       run: |
+  #         kubectl --kubeconfig=kubeconfig set image deployment/samuellando-dot-com migrations=git.zelda.samuellando.com/samuellando/${{ env.IMAGE_NAME }}
+  #         kubectl --kubeconfig=kubeconfig rollout status deployment/samuellando-dot-com
+  #
+  # deploy:
+  #   runs-on: ubuntu-latest
+  #   needs: [build, migrate]
+  #   env:
+  #     IMAGE_NAME: ${{ needs.build.outputs.IMAGE_NAME }}
+  #   steps:
+  #     - name: Set up kubectl
+  #       uses: azure/setup-kubectl@v3
+  #     - name: Configure kubectl
+  #       run: echo "${{ secrets.KUBECONFIG }}" | base64 --decode > kubeconfig
+  #     - name: Update Kubernetes deployment
+  #       run: |
+  #         kubectl --kubeconfig=kubeconfig set image deployment/samuellando-dot-com samuellando-dot-com=git.zelda.samuellando.com/samuellando/${{ env.IMAGE_NAME }}
+  #         kubectl --kubeconfig=kubeconfig rollout status deployment/samuellando-dot-com

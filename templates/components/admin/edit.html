@@ -1,0 +1,30 @@
+<div>
+    {{if (.Get "Admin")}}
+    {{$document := (.Get "Document")}}
+    {{if ne $document nil}}
+    <div>
+        <form hx-encoding='multipart/form-data' hx-put='/document/{{(.Get "Reference")}}' 
+            hx-target="#document"
+            hx-swap="outerHTML"
+            hx-trigger="input from:[type='text'] delay:500ms, input from:textarea delay:500ms">
+            <label>Title </label>
+            <input name="title" type="text" value="{{$document.Title}}" /><br />
+            <label>Content </label><br />
+            <textarea rows="30" cols="100" name="content">{{$document.Content}}</textarea><br />
+            <label>File </label>
+            <input name="file" type="file" />
+            <br />
+            <a hx-boost="false" href="/document/{{$document.Id}}?download=true">
+                Download as File
+            </a>
+            <label>Tags </label>
+            <input name="tags" type="text" value='{{joinTags $document.Tags ","}}' /><br />
+        </form>
+    </div>
+    <button hx-delete='/document/{{(.Get "Reference")}}' hx-target="body" hx-push-url="true">
+        Delete this Document
+    </button>
+    <hr />
+    {{end}}
+    {{end}}
+</div>

@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+    --color-black-500: #282828;
+    --color-red-500: #fb4934;
+    --color-green-500: #b8bb26;
+    --color-yellow-500: #fabd2f;
+    --color-blue-500: #83a598;
+    --color-purple-500: #d3869b;
+    --color-aqua-500: #8ec07c;
+    --color-white-500: #ebdbb2;
+}
+
+@layer base {
+    input[type=text], 
+    input[type=password],
+    input[type=submit],
+    button,
+    textarea,
+    input::file-selector-button {
+        @apply border;
+    }
+
+    table {
+        @apply table-auto;
+        @apply w-screen;
+        border-collapse: collapse;
+    }
+
+    table, th, td {
+        @apply border;
+    }
+
+    .md-a {
+        @apply underline;
+        @apply text-blue-500;
+    }
+
+    .md-h1, 
+    .md-h2,
+    .md-h3,
+    .md-h4,
+    .md-h5, 
+    .md-h6 {
+        @apply my-6;
+    }
+
+    .md-h1 {
+        @apply text-6xl;
+    }
+
+    .md-h2 {
+        @apply text-5xl;
+    }
+
+    .md-h3 {
+        @apply text-4xl;
+    }
+
+    .md-h4 {
+        @apply text-3xl;
+    }
+
+    .md-h5 {
+        @apply text-2xl;
+    }
+
+    .md-h6 {
+        @apply text-xl;
+    }
+}

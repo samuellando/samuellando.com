@@ -1,0 +1,20 @@
+<table id="list">
+    <tr>
+        <th>Value</th>
+        <th>Color</th>
+        <th>Delete</th>
+    </tr>
+    {{range (.Get "TagStore").GetAll}}
+    <tr>
+        <td>{{.Value}}</td>
+        <td>
+            <form hx-patch="/tag/{{.Id}}" hx-on::after-request="location.reload()">
+                <input name="color" {{if ne .Color nil}}style="background: {{.Color}};" {{end}} type="text" value="{{if ne .Color nil}}{{.Color}}{{end}}" />
+                <button hx-swap="none">Update</button>
+            </form>
+        </td>
+        <td><button hx-swap="none" hx-on::after-request="location.reload()" hx-delete="/tag/{{.Id}}">Delete</button>
+        </td>
+    </tr>
+    {{end}}
+</table>

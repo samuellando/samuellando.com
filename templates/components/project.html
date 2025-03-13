@@ -1,0 +1,28 @@
+<a href="{{.Url}}">
+    <div class="relative overflow-hidden border rounded-2xl w-full">
+        {{if ne .ImageLink nil}}
+        <img class="w-full h-52 object-cover" 
+            src="{{.ImageLink}}"
+            alt="project-thumbnail"/>
+        {{end}}
+        <div class="w-full p-3 mt-3 flex flex-col h-52 justify-between">
+            <div>
+                <h4 
+                    class="text-3xl text-wrap break-words"
+                    style="font-size: clamp(1rem, 2vw, 1.875rem);">{{.Title}}</h4>
+                <p class="text-sm mt-2">
+                    {{.Created.Format "2006"}} - {{.Pushed.Format "Jan 2 2006"}}
+                </p>
+                <p class="mt-3">
+                    {{.Description}}
+                </p>
+            </div>
+            <div class="flex flex-row flex-wrap gap-2">
+                {{range .Tags}}
+                {{template "tag" .}}
+                {{end}}
+            </div>
+        </div>
+        <div class="absolute inset-0 bg-none hover:bg-white-500/20 transition duration-200"></div>
+    </div>
+</a>

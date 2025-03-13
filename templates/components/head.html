@@ -1,0 +1,28 @@
+<head>
+    <script src="/static/htmx.min.js"></script>
+    <title>Samuel Lando</title>
+    <link href="/static/output.css" rel="stylesheet">
+</head>
+
+<body class="bg-black-500 text-white-500">
+    {{if eq (.Get "Page") "/"}}
+    <div class="p-6 flex justify-end">
+        {{template "search"}}
+    </div>
+    <div class="mt-24 flex justify-center">
+        {{template "title" .}}
+    </div>
+    <div class="mt-16 flex justify-center">
+        {{template "nav" .}}
+    </div>
+    {{else}}
+    <div class="p-6 gap-x-6 flex justify-between">
+        <div class="flex items-center gap-x-6">
+        {{template "small-title" .}}
+        {{template "nav" .}}
+        </div>
+        <div>
+        {{template "search"}}
+        </div>
+    </div>
+    {{end}}

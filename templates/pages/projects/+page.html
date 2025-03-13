@@ -1,0 +1,23 @@
+<div class="flex flex-col mb-32">
+    {{if ne (.Get "ProjectGroups") nil}}
+    <h1 class="text-center text-5xl">Projects</h1>
+    <div class="flex justify-center mt-12">
+    {{template "filter" (arr . (.Get "ProjectStore").AllTags)}}
+    </div>
+    {{range (.Get "ProjectGroups").ToSlice }}
+    <div class="flex flex-col items-center mt-6">
+        <h3 class="my-6 text-5xl text-left w-full px-24">{{.Key}}:</h3>
+        <div class="flex flex-row gap-10 mt-4 justify-center flex-wrap w-full">
+            {{range .Value.GetAll}}
+            {{template "project-li" (arr . $)}}
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+    {{else}}
+    <ul>
+        {{range (.Get "ProjectStore").GetAll}}
+        {{template "project-li" (arr . $)}}
+        {{end}}
+    </ul>
+    {{end}}

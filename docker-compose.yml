@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: development.dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - migrate
+    env_file: ".local.env"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./cmd/wasm
+        - action: sync+restart
+          path: .
+          target: /app
+
+  migrate:
+    build:
+      context: .
+      dockerfile: migrations.dockerfile
+    depends_on:
+      - db
+    env_file: ".local.env"
+
+  db:
+    image: postgres
+    container_name: db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: docker
+      POSTGRES_DB: postgres

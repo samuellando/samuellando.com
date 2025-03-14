@@ -1,5 +1,4 @@
-name: Gitea Actions
-run-name: ${{ gitea.actor }} is running
+name: Deploy to cloud run
 on:
   push:
     branches:
@@ -29,11 +28,25 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
     env:
-      DB_HOST: postgres
       DB_PORT: 5432
+      DB_HOST: localhost
       DB_USER: actionuser
       DB_PASSWORD: actionpassword
       DB_NAME: testdb
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: actionuser
+          POSTGRES_PASSWORD: actionpassword
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -53,15 +66,6 @@ jobs:
         run: go test -v ./...
       - name: Run WASM Tests
         run: GOOS=js GOARCH=wasm go test ./wasm/...
-    services:
-      postgres:
-        image: postgres
-        env:
-          POSTGRES_USER: actionuser
-          POSTGRES_PASSWORD: actionpassword
-          POSTGRES_DB: testdb
-        ports:
-          - 5432:5432
 
   build:
     runs-on: ubuntu-latest
@@ -92,7 +96,7 @@ jobs:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
       - name: Configure Docker to use the gcloud command-line tool as a credential helper
-        run: gcloud auth configure-docker
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
 
       - name: Push Docker image to Google Cloud Artifact Registry
         run: |
@@ -128,7 +132,7 @@ jobs:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
       - name: Configure Docker to use the gcloud command-line tool as a credential helper
-        run: gcloud auth configure-docker
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
 
       - name: Push Docker image to Google Cloud Artifact Registry
         run: |

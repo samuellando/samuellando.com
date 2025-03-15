@@ -25,13 +25,14 @@ type cacheElement struct {
 	value   []byte
 }
 
+var localCache = make(map[string]cacheElement)
+
 // Function that caches the result of the provided function f.
 // It uses in-memory and optional external database caching.
 // The cache key is derived from the function's name.
 // opts allows customization of cache options such as MaxAge and Db.
 func Cached(f func() ([]byte, error), opts ...func(*CacheOptions)) func() ([]byte, error) {
 	// In-memory local instance cache to avoid hitting the db with every request.
-	localCache := make(map[string]cacheElement)
 	cacheOptions := CacheOptions{MaxAge: time.Hour}
 
 	for _, opt := range opts {

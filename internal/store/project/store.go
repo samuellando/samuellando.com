@@ -21,10 +21,9 @@ const URL = "https://api.github.com/users/samuellando/repos?per_page=100"
 const API_VERSION = "2022-11-28"
 
 type Store struct {
-	db              *sql.DB
-	options         Options
-	materialized    *store.MaterializedStore[Project]
-	cachedRequester func() ([]byte, error)
+	db           *sql.DB
+	options      Options
+	materialized *store.MaterializedStore[Project]
 }
 
 type Options struct {
@@ -37,10 +36,9 @@ func CreateStore(db *sql.DB, opts ...func(*Options)) Store {
 		opt(&o)
 	}
 	return Store{
-		db:              db,
-		options:         o,
-		materialized:    nil,
-		cachedRequester: initGithubExternalRequester(o.Url, db),
+		db:           db,
+		options:      o,
+		materialized: nil,
 	}
 }
 
@@ -113,7 +111,7 @@ func (ps Store) Filter(f func(Project) bool) (store.Store[Project], error) {
 		return ps, err
 	}
 	if ms, ok := filtered.(store.MaterializedStore[Project]); ok {
-		return Store{db: ps.db, materialized: &ms, cachedRequester: ps.cachedRequester}, nil
+		return Store{db: ps.db, materialized: &ms}, nil
 	} else {
 		panic("Could not type cast to MaterializedStore!")
 	}
@@ -135,7 +133,7 @@ func (ps Store) Sort(f func(Project, Project) bool) (store.Store[Project], error
 		return ps, err
 	}
 	if ms, ok := sorted.(store.MaterializedStore[Project]); ok {
-		return Store{db: ps.db, materialized: &ms, cachedRequester: ps.cachedRequester}, nil
+		return Store{db: ps.db, materialized: &ms}, nil
 	} else {
 		panic("Could not type cast to MaterializedStore!")
 	}
@@ -176,18 +174,15 @@ func (ds Store) AllSharedTags(tagValue string) ([]tag.ProtoTag, error) {
 }
 
 func (ds Store) loadGitHubProjects(url string) ([]Project, error) {
-	if ds.cachedRequester == nil {
-		ds.cachedRequester = initGithubExternalRequester(url, ds.db)
-	}
-	bytes, err := ds.cachedRequester()
+	bytes, err := GithubRequest(url, ds.db)
 	if err != nil {
 		return nil, err
 	}
 	return unmarshalResponse(bytes)
 }
 
-func initGithubExternalRequester(url string, db *sql.DB) func() ([]byte, error) {
-	return cache.Cached(func() ([]byte, error) {
+func GithubRequest(url string, db *sql.DB) ([]byte, error) {
+	c := cache.Cached(func() ([]byte, error) {
 		req, err := createRequest(url)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to crete request : %s", err)
@@ -209,6 +204,7 @@ func initGithubExternalRequester(url string, db *sql.DB) func() ([]byte, error) 
 		o.MaxAge = 5 * time.Minute
 		o.Db = db
 	})
+	return c()
 }
 
 func createRequest(url string) (*http.Request, error) {

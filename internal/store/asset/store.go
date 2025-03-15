@@ -1,10 +1,15 @@
 package asset
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/gob"
+	"strconv"
+	"time"
 
 	"samuellando.com/data"
+	"samuellando.com/internal/cache"
 	"samuellando.com/internal/datatypes"
 	"samuellando.com/internal/store"
 )
@@ -37,10 +42,46 @@ func (as Store) Add(a ProtoAsset) (Asset, error) {
 	}, nil
 }
 
+func encode(o any) ([]byte, error) {
+	var b bytes.Buffer
+	enc := gob.NewEncoder(&b)
+	if err := enc.Encode(o); err != nil {
+		return nil, err
+	}
+	return b.Bytes(), nil
+}
+
+func decode(data []byte, p any) error {
+	b := bytes.NewBuffer(data)
+	dec := gob.NewDecoder(b)
+	if err := dec.Decode(p); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (as Store) GetById(id int64) (Asset, error) {
-	ctx := context.TODO()
-	queries := data.New(as.db)
-	row, err := queries.GetAsset(ctx, id)
+	c := cache.ParamCached(func() ([]byte, error) {
+		ctx := context.TODO()
+		queries := data.New(as.db)
+		row, err := queries.GetAsset(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		b, err := encode(row)
+		if err != nil {
+			return nil, err
+		}
+		return b, nil
+	}, strconv.Itoa(int(id)), func(co *cache.CacheOptions) {
+		co.MaxAge = time.Minute * 5
+	})
+	d, err := c()
+	if err != nil {
+		return Asset{}, err
+	}
+	var row data.GetAssetRow
+	err = decode(d, &row)
 	if err != nil {
 		return Asset{}, err
 	}
@@ -55,9 +96,27 @@ func (as Store) GetById(id int64) (Asset, error) {
 }
 
 func (as Store) GetByName(name string) (Asset, error) {
-	ctx := context.TODO()
-	queries := data.New(as.db)
-	row, err := queries.GetAssetByName(ctx, name)
+	c := cache.ParamCached(func() ([]byte, error) {
+		ctx := context.TODO()
+		queries := data.New(as.db)
+		row, err := queries.GetAssetByName(ctx, name)
+		if err != nil {
+			return nil, err
+		}
+		b, err := encode(row)
+		if err != nil {
+			return nil, err
+		}
+		return b, nil
+	}, name, func(co *cache.CacheOptions) {
+		co.MaxAge = time.Minute * 5
+	})
+	d, err := c()
+	if err != nil {
+		return Asset{}, err
+	}
+	var row data.GetAssetByNameRow
+	err = decode(d, &row)
 	if err != nil {
 		return Asset{}, err
 	}

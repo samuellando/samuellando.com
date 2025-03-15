@@ -152,8 +152,8 @@ jobs:
       - name: Deploy to Cloud Run
         run: |
           gcloud run jobs deploy migrations --image us-central1-docker.pkg.dev/samuellandocom/samuellando/${{ env.IMAGE_NAME }} \
-          --region us-central1 \
-          --execute-now
+          --region us-central1
+          gcloud run jobs execute migrations --wait --region us-central1
 
   deploy:
     runs-on: ubuntu-latest

@@ -46,7 +46,7 @@ func (ps Store) GetById(id int64) (Project, error) {
 	if ps.materialized != nil {
 		return ps.materialized.GetById(id)
 	}
-	ghProjects, err := loadGitHubProjects(ps.db, ps.options.Url)
+	ghProjects, err := ps.loadGitHubProjects(ps.options.Url)
 	if err != nil {
 		return Project{}, err
 	}
@@ -77,7 +77,7 @@ func (ps Store) GetAll() ([]Project, error) {
 	if ps.materialized != nil {
 		return ps.materialized.GetAll()
 	}
-	ghProjects, err := loadGitHubProjects(ps.db, ps.options.Url)
+	ghProjects, err := ps.loadGitHubProjects(ps.options.Url)
 	if err != nil {
 		return nil, err
 	}
@@ -173,16 +173,16 @@ func (ds Store) AllSharedTags(tagValue string) ([]tag.ProtoTag, error) {
 	return tags, nil
 }
 
-func loadGitHubProjects(db *sql.DB, url string) ([]Project, error) {
-	bytes, err := getGithubProjects(url, db)
+func (ds Store) loadGitHubProjects(url string) ([]Project, error) {
+	bytes, err := GithubRequest(url, ds.db)
 	if err != nil {
 		return nil, err
 	}
 	return unmarshalResponse(bytes)
 }
 
-func getGithubProjects(url string, db *sql.DB) ([]byte, error) {
-	cachedFunc := cache.Cached(func() ([]byte, error) {
+func GithubRequest(url string, db *sql.DB) ([]byte, error) {
+	c := cache.Cached(func() ([]byte, error) {
 		req, err := createRequest(url)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to crete request : %s", err)
@@ -204,7 +204,7 @@ func getGithubProjects(url string, db *sql.DB) ([]byte, error) {
 		o.MaxAge = 5 * time.Minute
 		o.Db = db
 	})
-	return cachedFunc()
+	return c()
 }
 
 func createRequest(url string) (*http.Request, error) {

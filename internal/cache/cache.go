@@ -27,6 +27,12 @@ type cacheElement struct {
 
 var localCache = make(map[string]cacheElement)
 
+func resetCache() {
+	for k := range localCache {
+		delete(localCache, k)
+	}
+}
+
 // Function that caches the result of the provided function f.
 // It uses in-memory and optional external database caching.
 // The cache key is derived from the function's name.

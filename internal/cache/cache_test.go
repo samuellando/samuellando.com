@@ -23,6 +23,7 @@ func setup() *sql.DB {
 
 // teardown closes the test database connection.
 func teardown(db *sql.DB) {
+	resetCache()
 	db.Close()
 }
 

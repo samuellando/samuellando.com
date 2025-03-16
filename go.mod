@@ -2,12 +2,14 @@ module samuellando.com
 
 go 1.23.4
 
+toolchain go1.24.1
+
 require (
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/samuellando/gositter v0.1.2
 	github.com/tdewolff/canvas v0.0.0-20250121210638-095c8720cf5b
-	golang.org/x/crypto v0.32.0
+	golang.org/x/crypto v0.35.0
 )
 
 require (
@@ -22,7 +24,7 @@ require (
 	github.com/tdewolff/minify/v2 v2.21.1 // indirect
 	github.com/tdewolff/parse/v2 v2.7.19 // indirect
 	golang.org/x/image v0.23.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	star-tex.org/x/tex v0.5.0 // indirect
 )

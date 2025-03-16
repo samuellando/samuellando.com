@@ -91,11 +91,12 @@ func (h *Handler) createDocument(w http.ResponseWriter, req *http.Request) {
 }
 func (h *Handler) getTagsFromReq(req *http.Request) []tag.ProtoTag {
 	tagValues := strings.Split(req.PostFormValue("tags"), ",")
-	tags := make([]tag.ProtoTag, len(tagValues))
-	for i, tv := range tagValues {
-		tags[i] = tag.ProtoTag{
-			Value: tv,
+	tags := make([]tag.ProtoTag, 0)
+	for _, tv := range tagValues {
+		if tv == "" {
+			continue
 		}
+		tags = append(tags, tag.ProtoTag{Value: tv})
 	}
 	return tags
 }

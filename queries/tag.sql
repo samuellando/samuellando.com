@@ -14,7 +14,9 @@ tags AS (
 document_tags AS (
     INSERT INTO document_tag (document, tag)
     SELECT $1, tags.id FROM tags
-    ON CONFLICT DO NOTHING
+    ON CONFLICT (document, tag) DO UPDATE
+        SET document = document_tag.document,
+            tag = document_tag.tag
     RETURNING document, tag
 )
 SELECT tags.id, tags.value, tags.color 
@@ -66,7 +68,9 @@ tags AS (
 project_tags AS (
     INSERT INTO project_tag (project, tag)
     SELECT $1, tags.id FROM tags
-    ON CONFLICT DO NOTHING
+    ON CONFLICT (project, tag) DO UPDATE
+        SET project = project_tag.project,
+            tag = project_tag.tag
     RETURNING project, tag
 )
 SELECT tags.id, tags.value, tags.color 

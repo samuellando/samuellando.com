@@ -103,3 +103,24 @@ func TestUpdate(t *testing.T) {
 		t.Fatalf("Expected 0 tags, got %d", len(proj.Tags()))
 	}
 }
+
+func TestTagConflicts(t *testing.T) {
+	ps, ts, db := setup()
+	defer teardown(ts, db)
+
+	proj, _ := ps.GetById(1)
+	tags := []tag.ProtoTag{
+		{Value: "tag-1"},
+	}
+	proj.Update(func(pp *ProtoProject) {
+		pp.Tags = tags
+	})
+	proj.Update(func(pp *ProtoProject) {
+		pp.Tags = tags
+	})
+
+	proj2, _ := ps.GetById(1)
+	if len(proj2.Tags()) != 1 {
+		t.Fatal("The tag is missing!")
+	}
+}

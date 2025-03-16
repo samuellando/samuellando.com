@@ -2,6 +2,8 @@ package asset
 
 import (
 	"bufio"
+	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,7 +31,11 @@ func (h *Handler) getAsset(w http.ResponseWriter, req *http.Request) {
 	} else {
 		asset, err := h.Store.GetByName(name)
 		if err != nil {
-			http.Error(w, "asset not found", 404)
+			if errors.Is(err, sql.ErrNoRows) {
+				http.Error(w, "asset not found", 404)
+			} else {
+				http.Error(w, fmt.Sprint(err), 500)
+			}
 			return
 		}
 		content, err := asset.Content()
@@ -85,7 +91,7 @@ func (h *Handler) deleteAsset(w http.ResponseWriter, req *http.Request) {
 	}
 	err = asset.Delete()
 	if err != nil {
-		http.Error(w, "Faild to delete asset", 500)
+		http.Error(w, "Failed to delete asset", 500)
 		return
 	}
 }

@@ -24,7 +24,8 @@ ORDER BY value;
 -- name: GetAllDocumentTags :many
 SELECT DISTINCT sqlc.embed(t)
 FROM document_tag dt
-INNER JOIN tag t ON dt.tag = t.id;
+INNER JOIN tag t ON dt.tag = t.id
+ORDER BY value;
 
 -- name: GetSharedDocumentTags :many
 WITH main_tag AS (
@@ -46,7 +47,8 @@ tags AS (
 )
 SELECT DISTINCT sqlc.embed(t)
 FROM tags
-INNER JOIN tag t ON t.id = tags.id;
+INNER JOIN tag t ON t.id = tags.id
+ORDER BY value;
 
 -- name: SetProjectTags :many
 WITH clear_project_tags AS (
@@ -76,7 +78,8 @@ SELECT DISTINCT sqlc.embed(t)
 FROM project_tag pt
 INNER JOIN tag t ON pt.tag = t.id
 INNER JOIN project p ON p.id = pt.project
-WHERE p.hidden is false;
+WHERE p.hidden is false
+ORDER BY value;
 
 
 -- name: GetSharedProjectTags :many
@@ -99,11 +102,13 @@ tags AS (
 )
 SELECT DISTINCT sqlc.embed(t)
 FROM tags
-INNER JOIN tag t ON t.id = tags.id;
+INNER JOIN tag t ON t.id = tags.id
+ORDER BY value;
 
 -- name: GetTags :many
 SELECT sqlc.embed(tag)
-FROM tag;
+FROM tag
+ORDER BY value;
 
 -- name: GetTag :one
 SELECT sqlc.embed(tag)

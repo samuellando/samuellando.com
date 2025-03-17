@@ -1,6 +1,6 @@
 <div class="flex flex-col mb-32">
     {{if ne (.Get "ProjectGroups") nil}}
-    <h1 class="text-center text-5xl">Projects</h1>
+    <h1 class="text-center mt-32 lg:mt-16 text-5xl">Projects</h1>
     <div class="flex justify-center mt-12">
     {{template "filter" (arr . (.Get "ProjectStore").AllTags)}}
     </div>

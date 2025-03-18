@@ -1,12 +1,15 @@
 <div class="flex flex-col mb-32">
     {{if ne (.Get "ProjectGroups") nil}}
-    <h1 class="text-center mt-32 lg:mt-16 text-5xl">Projects</h1>
-    <div class="flex justify-center mt-12">
+    <h1 class="text-center mt-32 lg:mt-6 text-7xl lg:text-5xl">Projects</h1>
+    <div class="flex justify-center mt-18 lg:mt-18">
     {{template "filter" (arr . (.Get "ProjectStore").AllTags)}}
     </div>
+    <div class="flex justify-center mt-12">
+        <img id="spinner" class="htmx-indicator h-20 w-20" src="/static/spinner.png"/>
+    </div>
     {{range (.Get "ProjectGroups").ToSlice }}
-    <div class="flex flex-col items-center mt-6">
-        <h3 class="my-6 text-5xl text-left w-full px-24">{{.Key}}:</h3>
+    <div class="flex flex-col items-center">
+        <h3 class="mt-12 mb-6 text-5xl text-left w-full px-24">{{.Key}}:</h3>
         <div class="flex flex-row gap-10 mt-4 justify-center flex-wrap w-full">
             {{range .Value.GetAll}}
             {{template "project-li" (arr . $)}}

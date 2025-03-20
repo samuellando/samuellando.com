@@ -2,6 +2,7 @@
     <script src="/static/htmx.min.js"></script>
     <title>Samuel Lando</title>
     <link href="/static/output.css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 </head>
 
 <body class="bg-black-500 text-white-500">
@@ -9,15 +10,15 @@
     <div class="p-6 flex justify-end">
         {{template "search"}}
     </div>
-    <div class="mt-24 flex justify-center">
+    <div class="mt-96 lg:mt-24 flex justify-center">
         {{template "title" .}}
     </div>
-    <div class="mt-16 flex justify-center">
+    <div class="mt-32 lg:mt-16 flex justify-center">
         {{template "nav" .}}
     </div>
     {{else}}
-    <div class="p-6 gap-x-6 flex justify-between">
-        <div class="flex items-center gap-x-6">
+    <div class="p-6 gap-x-6 flex justify-between pr-12">
+        <div class="flex items-center gap-x-20 lg:gap-x-6">
         {{template "small-title" .}}
         {{template "nav" .}}
         </div>

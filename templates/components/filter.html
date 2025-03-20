@@ -1,6 +1,6 @@
 {{ $ctxt := index . 0 }}
 {{ $tags := index . 1 }}
-<form hx-get="?" hx-trigger="input" hx-target="body" hx-push-url="true" class="flex flex-wrap gap-5">
+<form hx-get="?" hx-trigger="input" hx-target="body" hx-push-url="true" hx-indicator="#spinner" class="flex flex-wrap gap-7 lg:gap-5">
     {{range $tags}}
     {{$color := .Color}}
     {{if eq $color nil}}
@@ -9,7 +9,7 @@
     <input type="checkbox" name="filter-tag" value="{{.Value}}" id="tag-{{.Value}}" class="hidden" 
     {{if (includes .Value ($ctxt.Get "FilterTags"))}} checked {{end}} />
     <label for="tag-{{.Value}}" 
-        class="cursor-pointer bg-black-500 text-white-500 rounded-full px-4 py-1 text-sm hover:bg-white-500/20 transition duration-200"
+        class="cursor-pointer bg-black-500 text-white-500 rounded-full px-4 py-1 text-xl lg:text-sm hover:bg-white-500/20 transition duration-200"
         style="
         {{if (includes .Value ($ctxt.Get "FilterTags"))}}
             background: {{$color}};

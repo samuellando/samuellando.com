@@ -1,4 +1,4 @@
 {{$doc := (index ((.Get "DocumentStore").Filter (byTag "bio")).GetAll 0)}}
-<div class="text-center mt-20">
+<div class="text-center mt-40 lg:mt-20 text-2xl lg:text-lg">
     {{$doc.Html}}
 </div>

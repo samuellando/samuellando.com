@@ -1,4 +1,4 @@
 {{$doc := (index ((.Get "DocumentStore").Filter (byTag "contact")).GetAll 0)}}
-<div class="m-20">
+<div class="m-20 text-2xl lg:text-lg">
     {{$doc.Html}}
 </div>

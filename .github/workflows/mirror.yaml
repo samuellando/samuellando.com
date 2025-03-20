@@ -14,5 +14,5 @@ jobs:
         run: |
           git fetch --unshallow
           git remote add gitea https://samuellando:${{ secrets.GITEA_ACCESS_TOKEN }}@git.zelda.samuellando.com/samuellando/personalWebsite.git
-          git push --all gitea
-          git push --tags gitea
+          git push --all gitea --force
+          git push --tags gitea --force

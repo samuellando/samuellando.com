@@ -82,7 +82,6 @@ jobs:
       file: migrations.dockerfile
 
   deploy-zelda:
-    environment: zelda
     needs: build
     uses: samuellando/actions/.github/workflows/update-infra.yml@main
     with:

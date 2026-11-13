@@ -80,33 +80,33 @@ jobs:
       image: ghcr.io/samuellando/samuellando.com-migrations
       file: migrations.dockerfile
 
-  # migrate:
-  #   runs-on: ubuntu-latest
-  #   needs: [build-migrations]
-  #   env:
-  #     IMAGE_NAME: ${{ needs.build-migrations.outputs.IMAGE_NAME }}
-  #   steps:
-  #     - name: Set up Google Cloud authentication
-  #       uses: google-github-actions/auth@v1
-  #       with:
-  #         credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-  #     - name: Deploy to Cloud Run
-  #       run: |
-  #         gcloud run jobs deploy migrations --image us-central1-docker.pkg.dev/samuellandocom/samuellando/${{ env.IMAGE_NAME }} \
-  #         --region us-central1
-  #         gcloud run jobs execute migrations --wait --region us-central1
-  #
-  # deploy:
-  #   runs-on: ubuntu-latest
-  #   needs: [build, migrate]
-  #   env:
-  #     IMAGE_NAME: ${{ needs.build.outputs.IMAGE_NAME }}
-  #   steps:
-  #     - name: Set up Google Cloud authentication
-  #       uses: google-github-actions/auth@v1
-  #       with:
-  #         credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-  #     - name: Deploy to Cloud Run
-  #       run: |
-  #         gcloud run deploy samuellando-com --image ${{ needs.build.outputs.image_tag }} \
-  #         --region us-central1
+  migrate:
+    runs-on: ubuntu-latest
+    needs: [build-migrations]
+    env:
+      IMAGE_NAME: ${{ needs.build-migrations.outputs.IMAGE_NAME }}
+    steps:
+      - name: Set up Google Cloud authentication
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run jobs deploy migrations --image ghcr.io/samuellando/samuellando.com-migrations:${{ needs.build-migrations.outputs.image_tag }} \
+          --region us-central1
+          gcloud run jobs execute migrations --wait --region us-central1
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build, migrate]
+    env:
+      IMAGE_NAME: ${{ needs.build.outputs.IMAGE_NAME }}
+    steps:
+      - name: Set up Google Cloud authentication
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy samuellando-com --image ghcr.io/samuellando/samuellando.com:${{ needs.build.outputs.image_tag }} \
+          --region us-central1

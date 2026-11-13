@@ -82,7 +82,7 @@ jobs:
       file: migrations.dockerfile
 
   deploy-zelda:
-    if: github.event_name == 'workflow_dispatch'
+    environment: zelda
     needs: build
     uses: samuellando/actions/.github/workflows/update-infra.yml@main
     with:

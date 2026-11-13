@@ -76,6 +76,7 @@ jobs:
   build-migrations:
     needs: [test]
     uses: samuellando/actions/.github/workflows/build-push.yml@main
+    file: migrations.dockerfile
     with:
       image: ghcr.io/samuellando/samuellando.com-migrations
 

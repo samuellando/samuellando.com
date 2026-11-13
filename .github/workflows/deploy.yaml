@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   format:
@@ -80,7 +81,19 @@ jobs:
       image: ghcr.io/samuellando/samuellando.com-migrations
       file: migrations.dockerfile
 
+  deploy-zelda:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    uses: samuellando/actions/.github/workflows/update-infra.yml@main
+    with:
+      image: ghcr.io/samuellando/samuellando.com
+      tag: ${{ needs.build.outputs.image_tag }}
+      infra_file: apps/homepage/kube_config.yml
+    secrets:
+      INFRA_PAT: ${{ secrets.INFRA_PAT }}
+
   migrate:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     needs: [build-migrations]
     env:
@@ -97,6 +110,7 @@ jobs:
           gcloud run jobs execute migrations --wait --region us-central1
 
   deploy:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     needs: [build, migrate]
     env:

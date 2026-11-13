@@ -82,12 +82,14 @@ jobs:
       file: migrations.dockerfile
 
   deploy-zelda:
-    needs: build
+    needs: [build, build-migrations]
     uses: samuellando/actions/.github/workflows/update-infra.yml@main
     with:
-      image: ghcr.io/samuellando/samuellando.com
-      tag: ${{ needs.build.outputs.image_tag }}
-      infra_file: apps/homepage/kube_config.yml
+      updates: |
+        [
+          {"image": "ghcr.io/samuellando/samuellando.com", "tag": "${{ needs.build.outputs.image_tag }}", "infra_file": "apps/samuellando.com/kube_config.yml"},
+          {"image": "ghcr.io/samuellando/samuellando.com-migrations", "tag": "${{ needs.build-migrations.outputs.image_tag }}", "infra_file": "apps/samuellando.com/kube_config.yml"}
+        ]
     secrets:
       INFRA_PAT: ${{ secrets.INFRA_PAT }}
 

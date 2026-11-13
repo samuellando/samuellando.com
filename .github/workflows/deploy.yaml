@@ -96,7 +96,7 @@ jobs:
   migrate:
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
-    needs: [build-migrations]
+    needs: [build, build-migrations]
     env:
       IMAGE_NAME: ${{ needs.build-migrations.outputs.IMAGE_NAME }}
     steps:

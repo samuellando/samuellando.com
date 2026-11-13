@@ -1,4 +1,4 @@
-FROM node:22 as tailwind
+FROM node:27 as tailwind
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ COPY migrations ./migrations
 COPY sqlc.yml . 
 RUN sqlc generate
 
-FROM golang:1.23 as build
+FROM golang:1.27 as build
 
 WORKDIR /app
 

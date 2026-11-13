@@ -1,10 +1,10 @@
-FROM golang:1.23
+FROM golang:1.27
 
 WORKDIR /app
 
 # Some build dependencies
 RUN apt update && apt install npm -y
-COPY --from=sqlc/sqlc:1.28.0 /workspace/sqlc /usr/bin/sqlc
+COPY --from=sqlc/sqlc /workspace/sqlc /usr/bin/sqlc
 
 # Copy the Go module files
 COPY go.mod .

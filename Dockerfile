@@ -1,4 +1,4 @@
-FROM node:22 as tailwind
+FROM node:24.22.3 as tailwind
 
 WORKDIR /app
 
@@ -17,13 +17,13 @@ RUN npx tailwindcss -i ./static/input.css -o ./static/output.css --minify
 
 FROM debian as sqlc
 WORKDIR /app
-COPY --from=sqlc/sqlc:1.28.0 /workspace/sqlc /usr/bin/sqlc
+COPY --from=sqlc/sqlc:1.31.1 /workspace/sqlc /usr/bin/sqlc
 COPY queries ./queries
 COPY migrations ./migrations
 COPY sqlc.yml . 
 RUN sqlc generate
 
-FROM golang:1.23 as build
+FROM golang:1.27 as build
 
 WORKDIR /app
 
